@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Private / non-public areas
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /account
+Disallow: /content-management
+Disallow: /Signin
+Disallow: /getSignup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /handover
+
+Sitemap: /sitemap.xml
