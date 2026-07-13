@@ -1,5 +1,6 @@
 @props([
     'rooms' => null,
+    'setting' => null,
     'formId' => 'booking-enquiry-form',
     'formAction' => null,
     'defaultEnquiryType' => null,
@@ -7,15 +8,19 @@
 
 @php
     $formAction = $formAction ?? route('contact.enquiry');
-    $rooms = $rooms ?? collect();
+    $setting = $setting ?? \App\Models\Setting::first();
+    $rooms = collect($rooms ?? []);
+    if ($rooms->isEmpty()) {
+        $rooms = \App\Models\Room::where('status', 'Active')->latest()->get();
+    }
     $hasRooms = $rooms->isNotEmpty();
     $enquiryTypes = [
         'general' => 'General enquiry',
-        'room' => 'Room booking',
+        'room' => 'Book a Room',
         'meetings' => 'Workshop / meeting',
         'dining' => 'Restaurant / dining',
     ];
-    $selectedType = old('enquiry_type', $defaultEnquiryType ?? ($hasRooms ? 'room' : 'general'));
+    $selectedType = old('enquiry_type', $defaultEnquiryType ?? 'general');
     if (! array_key_exists($selectedType, $enquiryTypes) || ($selectedType === 'room' && ! $hasRooms)) {
         $selectedType = 'general';
     }
@@ -90,16 +95,6 @@
             >
         </div>
 
-        <div class="col-12" data-enquiry-panel="room" @if($selectedType !== 'room') hidden @endif>
-            <label class="home-cta__label" for="{{ $formId }}-room">Room type <span class="home-cta__req">*</span></label>
-            <select class="home-cta__input home-cta__input--select" id="{{ $formId }}-room" name="room_id" data-room-required>
-                <option value="" disabled @selected(! old('room_id'))>Select a room</option>
-                @foreach($rooms as $room)
-                    <option value="{{ $room->id }}" @selected((int) old('room_id') === (int) $room->id)>{{ $room->title }}</option>
-                @endforeach
-            </select>
-        </div>
-
         <div class="col-md-6" data-enquiry-panel="room" @if($selectedType !== 'room') hidden @endif>
             <label class="home-cta__label" for="{{ $formId }}-checkin">Check-in <span class="home-cta__req">*</span></label>
             <input type="date" class="home-cta__input" id="{{ $formId }}-checkin" name="checkin_date" value="{{ old('checkin_date') }}" data-room-required min="{{ date('Y-m-d') }}">
@@ -109,12 +104,24 @@
             <input type="date" class="home-cta__input" id="{{ $formId }}-checkout" name="checkout_date" value="{{ old('checkout_date') }}" data-room-required min="{{ date('Y-m-d', strtotime('+1 day')) }}">
         </div>
         <div class="col-md-6" data-enquiry-panel="room" @if($selectedType !== 'room') hidden @endif>
-            <label class="home-cta__label" for="{{ $formId }}-adults">Adults <span class="home-cta__req">*</span></label>
+            <label class="home-cta__label" for="{{ $formId }}-adults">Number of guests <span class="home-cta__req">*</span></label>
             <input type="number" class="home-cta__input" id="{{ $formId }}-adults" name="adults" value="{{ old('adults', 1) }}" min="1" max="20" data-room-required>
         </div>
         <div class="col-md-6" data-enquiry-panel="room" @if($selectedType !== 'room') hidden @endif>
             <label class="home-cta__label" for="{{ $formId }}-children">Children <span class="home-cta__label-opt">(optional)</span></label>
             <input type="number" class="home-cta__input" id="{{ $formId }}-children" name="children" value="{{ old('children', 0) }}" min="0" max="20">
+        </div>
+
+        <div class="col-12" data-enquiry-panel="room" @if($selectedType !== 'room') hidden @endif>
+            <label class="home-cta__label" for="{{ $formId }}-room">Select a room <span class="home-cta__req">*</span></label>
+            <select class="home-cta__input home-cta__input--select" id="{{ $formId }}-room" name="room_id" data-room-required>
+                <option value="" disabled @selected(! old('room_id'))>Choose a room and nightly rate</option>
+                @foreach($rooms as $room)
+                    <option value="{{ $room->id }}" @selected((int) old('room_id') === (int) $room->id)>
+                        {{ $room->title }} — {{ hotel_price($room->price ?? 0, $setting) }} / night
+                    </option>
+                @endforeach
+            </select>
         </div>
 
         <div class="col-md-6" data-enquiry-panel="meetings" @if($selectedType !== 'meetings') hidden @endif>
@@ -160,11 +167,11 @@
         </div>
 
         <div class="col-12">
-            <button type="submit" class="theme-btn btn-style fill home-cta__submit bethel-enquiry-form__submit w-100">
-                <i class="fa-solid fa-paper-plane home-cta__submit-icon" aria-hidden="true"></i>
-                <span>Send enquiry</span>
+            <button type="submit" class="theme-btn btn-style fill home-cta__submit bethel-enquiry-form__submit w-100" data-enquiry-submit>
+                <i class="fa-solid fa-paper-plane home-cta__submit-icon" aria-hidden="true" data-enquiry-submit-icon></i>
+                <span data-enquiry-submit-label>Send enquiry</span>
             </button>
-            <p class="home-cta__form-note bethel-enquiry-form__note mb-0">
+            <p class="home-cta__form-note bethel-enquiry-form__note mb-0" data-enquiry-note>
                 We reply within one business day. Your details are only used to respond to this request.
             </p>
         </div>
@@ -206,6 +213,28 @@
         var roomFields = form.querySelectorAll('[data-room-required]');
         var meetingFields = form.querySelectorAll('[data-meetings-required]');
         var diningFields = form.querySelectorAll('[data-dining-required]');
+        var submitLabel = form.querySelector('[data-enquiry-submit-label]');
+        var submitIcon = form.querySelector('[data-enquiry-submit-icon]');
+        var formNote = form.querySelector('[data-enquiry-note]');
+        var checkinInput = form.querySelector('#' + form.id + '-checkin');
+        var checkoutInput = form.querySelector('#' + form.id + '-checkout');
+
+        function syncCheckoutMin() {
+            if (!checkinInput || !checkoutInput) {
+                return;
+            }
+            var checkinValue = checkinInput.value;
+            if (!checkinValue) {
+                return;
+            }
+            var nextDay = new Date(checkinValue + 'T00:00:00');
+            nextDay.setDate(nextDay.getDate() + 1);
+            var minCheckout = nextDay.toISOString().slice(0, 10);
+            checkoutInput.min = minCheckout;
+            if (checkoutInput.value && checkoutInput.value <= checkinValue) {
+                checkoutInput.value = minCheckout;
+            }
+        }
 
         function syncForm() {
             var type = typeSelect.value;
@@ -253,6 +282,28 @@
             if (messageOptional) {
                 messageOptional.hidden = messageIsRequired;
             }
+
+            if (submitLabel) {
+                submitLabel.textContent = type === 'room' ? 'Book room' : 'Send enquiry';
+            }
+            if (submitIcon) {
+                submitIcon.className = type === 'room'
+                    ? 'fa-solid fa-bed home-cta__submit-icon'
+                    : 'fa-solid fa-paper-plane home-cta__submit-icon';
+            }
+            if (formNote) {
+                formNote.textContent = type === 'room'
+                    ? 'Your booking request is pending confirmation. We will confirm availability shortly.'
+                    : 'We reply within one business day. Your details are only used to respond to this request.';
+            }
+
+            if (type === 'room') {
+                syncCheckoutMin();
+            }
+        }
+
+        if (checkinInput) {
+            checkinInput.addEventListener('change', syncCheckoutMin);
         }
 
         typeSelect.addEventListener('change', syncForm);

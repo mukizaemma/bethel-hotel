@@ -23,7 +23,7 @@ class ContactEnquiryAdminMail extends Mailable
 
         $adminTitle = $type === 'proposal' ? 'New proposal request' : 'New website enquiry';
         $typeLabel = match ($type) {
-            'room' => 'Room enquiry',
+            'room' => 'Book a Room',
             'meetings' => 'Workshop / meeting',
             'dining' => 'Restaurant / dining',
             'proposal' => 'Proposal (meetings / dining)',

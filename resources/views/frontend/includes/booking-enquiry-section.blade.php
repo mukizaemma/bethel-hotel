@@ -28,6 +28,7 @@
         </div>
         @include('frontend.includes.booking-enquiry-form', [
             'rooms' => $rooms,
+            'setting' => $setting,
             'formId' => $formId,
             'defaultEnquiryType' => $defaultEnquiryType,
         ])

@@ -482,22 +482,38 @@ class HomeController extends Controller
             $payload['subject'] = $validated['subject'];
             $payload['message'] = $validated['message'];
         } elseif ($validated['enquiry_type'] === 'room') {
-            $room = Room::find($validated['room_id']);
+            $room = Room::findOrFail($validated['room_id']);
+            $adults = (int) $validated['adults'];
+            $children = isset($validated['children']) ? (int) $validated['children'] : 0;
+            $extraBeds = (int) ($validated['extra_beds'] ?? 0);
+            $roomCount = max(1, (int) ($validated['rooms'] ?? 1));
+            $checkin = new \DateTime($validated['checkin_date']);
+            $checkout = new \DateTime($validated['checkout_date']);
+            $nights = max(0, $checkin->diff($checkout)->days);
+
+            $maxGuestsPerRoom = (int) ($room->max_occupancy ?? 0);
+            $totalGuests = $adults + $children;
+            if ($maxGuestsPerRoom > 0 && $totalGuests > ($maxGuestsPerRoom * $roomCount)) {
+                $suggestedRooms = (int) ceil($totalGuests / $maxGuestsPerRoom);
+
+                return redirect()->back()
+                    ->with('error', "Your selected room can’t accommodate {$totalGuests} guests. Please choose another room or reduce the number of guests (max {$maxGuestsPerRoom} per room; suggested rooms: {$suggestedRooms}).")
+                    ->withInput();
+            }
+
             $payload['room_id'] = (int) $validated['room_id'];
             $payload['checkin_date'] = $validated['checkin_date'];
             $payload['checkout_date'] = $validated['checkout_date'];
-            $payload['adults'] = (int) $validated['adults'];
-            $payload['children'] = isset($validated['children']) ? (int) $validated['children'] : 0;
+            $payload['adults'] = $adults;
+            $payload['children'] = $children;
             $payload['subject'] = filled($validated['subject'] ?? null)
                 ? $validated['subject']
-                : ($room ? 'Room enquiry: '.$room->title : 'Room enquiry');
+                : 'Room booking: '.$room->title;
             $payload['message'] = $validated['message'] ?? null;
 
-            $requestedRooms = (int) ($validated['rooms'] ?? 1);
-            $extraBeds = (int) ($validated['extra_beds'] ?? 0);
             $extraLines = [];
-            if ($requestedRooms > 1) {
-                $extraLines[] = 'Number of Rooms: '.$requestedRooms;
+            if ($roomCount > 1) {
+                $extraLines[] = 'Number of Rooms: '.$roomCount;
             }
             if ($extraBeds > 0) {
                 $extraLines[] = 'Extra beds requested: '.$extraBeds;
@@ -531,6 +547,50 @@ class HomeController extends Controller
 
         $message = Message::create($payload);
         $message->load('room');
+
+        if ($validated['enquiry_type'] === 'room') {
+            $booking = new Booking();
+            $booking->names = $validated['names'];
+            $booking->email = $email;
+            $booking->phone = $validated['phone'];
+            $booking->message = $payload['message'];
+            $booking->checkin_date = $validated['checkin_date'];
+            $booking->checkout_date = $validated['checkout_date'];
+            $booking->adults = (int) $validated['adults'];
+            $booking->children = isset($validated['children']) ? (int) $validated['children'] : 0;
+            $booking->rooms = max(1, (int) ($validated['rooms'] ?? 1));
+            $booking->room_id = (int) $validated['room_id'];
+            $booking->reservation_type = 'room';
+            $booking->facility_id = null;
+            $booking->tour_activity_id = null;
+            $booking->status = 'pending';
+            $booking->booking_type = 'online';
+            $booking->paid_amount = 0;
+            if (auth()->check()) {
+                $booking->user_id = auth()->id();
+            }
+            $extraBeds = (int) ($validated['extra_beds'] ?? 0);
+            $checkin = new \DateTime($validated['checkin_date']);
+            $checkout = new \DateTime($validated['checkout_date']);
+            $nights = max(0, $checkin->diff($checkout)->days);
+            $nightly = $room->nightlyRateForGuests((int) $validated['adults'], (int) ($validated['children'] ?? 0), $extraBeds);
+            $booking->total_amount = (int) round($nightly * $nights * $booking->rooms);
+            $booking->balance_amount = $booking->total_amount;
+            $booking->save();
+            $booking->load(['room', 'facility', 'tourActivity']);
+
+            $adminSent = SiteNotificationMail::sendToTeam(new BookingSubmittedAdminMail($booking));
+            $guestSent = SiteNotificationMail::sendToGuest($booking->email, new BookingSubmittedGuestMail($booking));
+
+            return $this->redirectBackWithContactEmailSwal(
+                redirect()->back(),
+                $adminSent,
+                $guestSent,
+                true,
+                'Booking received',
+                'Your room booking request was saved. We will confirm availability shortly.'
+            );
+        }
 
         $adminSent = SiteNotificationMail::sendToTeam(new ContactEnquiryAdminMail($message));
         $guestSent = SiteNotificationMail::sendToGuest($message->email, new ContactEnquiryGuestMail($message));
