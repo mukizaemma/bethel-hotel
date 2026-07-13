@@ -18,6 +18,7 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Cover</th>
                             <th>Title</th>
                             <th>Status</th>
                             <th>Images</th>
@@ -28,6 +29,13 @@
                         @foreach($facilities as $facility)
                         <tr>
                             <td>{{ $facility->id }}</td>
+                            <td>
+                                @if($facility->cover_image)
+                                    <img src="{{ asset('storage/' . $facility->cover_image) }}" alt="{{ $facility->title }}" style="width: 72px; height: 48px; object-fit: cover; border-radius: 6px;">
+                                @else
+                                    <span class="text-muted">No cover</span>
+                                @endif
+                            </td>
                             <td>{{ $facility->title }}</td>
                             <td><span class="badge bg-{{ $facility->status == 'Active' ? 'success' : 'danger' }}">{{ $facility->status }}</span></td>
                             <td>{{ $facility->images->count() }} images</td>
