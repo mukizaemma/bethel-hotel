@@ -7,11 +7,15 @@ use App\Models\Amenity;
 use App\Models\Room;
 use App\Models\Roomimage;
 use App\Models\Setting;
+use App\Services\MediaLibrary;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
 
 class RoomManagementController extends Controller
 {
+    public function __construct(protected MediaLibrary $mediaLibrary)
+    {
+    }
+
     public function index()
     {
         $rooms = Room::with(['amenities', 'images'])->latest()->get();
@@ -23,24 +27,7 @@ class RoomManagementController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'room_number' => 'nullable|string|max:255|unique:rooms,room_number',
-            'description' => 'nullable|string',
-            'cover_image' => 'nullable|image|max:2048',
-            'category' => 'nullable|string',
-            'number_of_rooms' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0',
-            'guests_included_in_price' => 'required|integer|min:1',
-            'extra_adult_price' => 'nullable|numeric|min:0',
-            'extra_child_price' => 'nullable|numeric|min:0',
-            'extra_bed_price' => 'nullable|numeric|min:0',
-            'status' => 'required|in:Active,Inactive',
-            'room_status' => 'required|in:available,occupied,reserved,maintenance',
-            'amenities' => 'nullable|array',
-            'amenities.*' => 'exists:amenities,id',
-            'images.*' => 'nullable|image|max:2048',
-        ]);
+        $request->validate($this->rules());
 
         $included = (int) $request->guests_included_in_price;
         $maxOcc = max($included, 1);
@@ -51,7 +38,6 @@ class RoomManagementController extends Controller
         $room->room_number = $request->room_number;
         $room->description = $request->description;
         $room->category = $request->category;
-        // Rooms management now always creates "room" records (not apartments).
         $room->room_type = 'room';
         $room->number_of_rooms = (int) $request->input('number_of_rooms', 1);
         $room->price = $request->price;
@@ -66,51 +52,21 @@ class RoomManagementController extends Controller
         $room->status = $request->status;
         $room->room_status = $request->room_status;
         $room->user_id = auth()->id();
-
-        if ($request->hasFile('cover_image')) {
-            $room->cover_image = $request->file('cover_image')->store('rooms', 'public');
-        }
-
+        $this->applyCover($request, $room);
         $room->save();
 
-        // Attach amenities
         if ($request->has('amenities')) {
             $room->amenities()->sync($request->amenities);
         }
 
-        // Handle gallery images
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $index => $image) {
-                Roomimage::create([
-                    'room_id' => $room->id,
-                    'image' => $image->store('rooms/gallery', 'public'),
-                ]);
-            }
-        }
+        $this->attachGalleryImages($request, $room);
 
         return response()->json(['success' => true, 'message' => 'Room created successfully']);
     }
 
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'room_number' => 'nullable|string|max:255|unique:rooms,room_number,' . $id,
-            'description' => 'nullable|string',
-            'cover_image' => 'nullable|image|max:2048',
-            'category' => 'nullable|string',
-            'number_of_rooms' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0',
-            'guests_included_in_price' => 'required|integer|min:1',
-            'extra_adult_price' => 'nullable|numeric|min:0',
-            'extra_child_price' => 'nullable|numeric|min:0',
-            'extra_bed_price' => 'nullable|numeric|min:0',
-            'status' => 'required|in:Active,Inactive',
-            'room_status' => 'required|in:available,occupied,reserved,maintenance',
-            'amenities' => 'nullable|array',
-            'amenities.*' => 'exists:amenities,id',
-            'images.*' => 'nullable|image|max:2048',
-        ]);
+        $request->validate($this->rules($id));
 
         $room = Room::findOrFail($id);
         $preservedCouplePrice = $room->couplePrice;
@@ -125,7 +81,6 @@ class RoomManagementController extends Controller
         $room->room_number = $request->room_number;
         $room->description = $request->description;
         $room->category = $request->category;
-        // Rooms management now always sets "room" type.
         $room->room_type = 'room';
         $room->number_of_rooms = (int) $request->input('number_of_rooms', 1);
         $room->price = $request->price;
@@ -139,32 +94,16 @@ class RoomManagementController extends Controller
         $room->bed_type = $preservedBedType;
         $room->status = $request->status;
         $room->room_status = $request->room_status;
-
-        if ($request->hasFile('cover_image')) {
-            if ($room->cover_image) {
-                Storage::disk('public')->delete($room->cover_image);
-            }
-            $room->cover_image = $request->file('cover_image')->store('rooms', 'public');
-        }
-
+        $this->applyCover($request, $room);
         $room->save();
 
-        // Sync amenities
         if ($request->has('amenities')) {
             $room->amenities()->sync($request->amenities);
         } else {
             $room->amenities()->detach();
         }
 
-        // Handle new gallery images
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $index => $image) {
-                Roomimage::create([
-                    'room_id' => $room->id,
-                    'image' => $image->store('rooms/gallery', 'public'),
-                ]);
-            }
-        }
+        $this->attachGalleryImages($request, $room);
 
         return response()->json(['success' => true, 'message' => 'Room updated successfully']);
     }
@@ -172,18 +111,9 @@ class RoomManagementController extends Controller
     public function destroy($id)
     {
         $room = Room::findOrFail($id);
-        
-        // Delete cover image
-        if ($room->cover_image) {
-            Storage::disk('public')->delete($room->cover_image);
-        }
-
-        // Delete gallery images
         foreach ($room->images as $image) {
-            Storage::disk('public')->delete($image->image);
             $image->delete();
         }
-
         $room->delete();
 
         return response()->json(['success' => true, 'message' => 'Room deleted successfully']);
@@ -198,7 +128,6 @@ class RoomManagementController extends Controller
     public function deleteImage($id)
     {
         $image = Roomimage::findOrFail($id);
-        Storage::disk('public')->delete($image->image);
         $image->delete();
 
         return response()->json(['success' => true, 'message' => 'Image deleted successfully']);
@@ -207,20 +136,86 @@ class RoomManagementController extends Controller
     public function addImages(Request $request, $id)
     {
         $request->validate([
-            'images.*' => 'required|image|max:2048',
+            'images.*' => 'nullable|image|max:10240',
+            'existing_media_ids' => 'nullable|array',
+            'existing_media_ids.*' => 'integer|exists:media_images,id',
         ]);
 
         $room = Room::findOrFail($id);
+        $this->attachGalleryImages($request, $room);
 
+        return response()->json(['success' => true, 'message' => 'Images added successfully']);
+    }
+
+    protected function rules(?int $id = null): array
+    {
+        return [
+            'title' => 'required|string|max:255',
+            'room_number' => 'nullable|string|max:255|unique:rooms,room_number'.($id ? ','.$id : ''),
+            'description' => 'nullable|string',
+            'cover_image' => 'nullable|image|max:10240',
+            'existing_cover_media_id' => 'nullable|integer|exists:media_images,id',
+            'existing_media_ids' => 'nullable|array',
+            'existing_media_ids.*' => 'integer|exists:media_images,id',
+            'category' => 'nullable|string',
+            'number_of_rooms' => 'required|integer|min:1',
+            'price' => 'required|numeric|min:0',
+            'guests_included_in_price' => 'required|integer|min:1',
+            'extra_adult_price' => 'nullable|numeric|min:0',
+            'extra_child_price' => 'nullable|numeric|min:0',
+            'extra_bed_price' => 'nullable|numeric|min:0',
+            'status' => 'required|in:Active,Inactive',
+            'room_status' => 'required|in:available,occupied,reserved,maintenance',
+            'amenities' => 'nullable|array',
+            'amenities.*' => 'exists:amenities,id',
+            'images.*' => 'nullable|image|max:10240',
+        ];
+    }
+
+    protected function applyCover(Request $request, Room $room): void
+    {
+        if ($request->hasFile('cover_image')) {
+            $media = $this->mediaLibrary->ingestUploadedFile($request->file('cover_image'), 'rooms');
+            $room->cover_image = $media->path;
+
+            return;
+        }
+
+        if ($request->filled('existing_cover_media_id')) {
+            $cover = $this->mediaLibrary->findMany([(int) $request->input('existing_cover_media_id')])->first();
+            if ($cover) {
+                $room->cover_image = $cover->path;
+            }
+        }
+    }
+
+    protected function attachGalleryImages(Request $request, Room $room): void
+    {
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                Roomimage::create([
-                    'room_id' => $room->id,
-                    'image' => $image->store('rooms/gallery', 'public'),
-                ]);
+                if (! $image || ! $image->isValid()) {
+                    continue;
+                }
+                $media = $this->mediaLibrary->ingestUploadedFile($image, 'rooms/gallery');
+                $this->addRoomImageIfMissing($room, $media->path);
             }
         }
 
-        return response()->json(['success' => true, 'message' => 'Images added successfully']);
+        foreach ($this->mediaLibrary->findMany((array) $request->input('existing_media_ids', [])) as $media) {
+            $this->addRoomImageIfMissing($room, $media->path);
+        }
+    }
+
+    protected function addRoomImageIfMissing(Room $room, string $path): void
+    {
+        $exists = Roomimage::query()->where('room_id', $room->id)->where('image', $path)->exists();
+        if ($exists) {
+            return;
+        }
+
+        Roomimage::create([
+            'room_id' => $room->id,
+            'image' => $path,
+        ]);
     }
 }

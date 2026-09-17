@@ -6,53 +6,81 @@
     <div class="container-fluid pt-4 px-4">
         <div class="bg-light rounded h-100 p-4">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-                <h4 class="mb-0">Gallery Management</h4>
+                <div>
+                    <h4 class="mb-1">Gallery Management</h4>
+                    <p class="text-muted mb-0">This list is what visitors see on the public gallery page. Newest images start at the top. Use the arrows to change order, or remove items without deleting them from Media Images.</p>
+                </div>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#galleryModal" onclick="resetForm()">
-                    <i class="fa fa-plus me-2"></i>Add Gallery Item
+                    <i class="fa fa-plus me-2"></i>Add to gallery
                 </button>
             </div>
 
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            @endif
+            @if(session('warning'))
+                <div class="alert alert-warning alert-dismissible fade show">{{ session('warning') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            @endif
             @if(session('error'))
                 <div class="alert alert-danger alert-dismissible fade show">{{ session('error') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
             @endif
 
             <div class="row">
-                @foreach($gallery as $item)
+                @forelse($gallery as $item)
                 <div class="col-md-3 mb-4">
                     <div class="card h-100">
-                        @if($item->media_type == 'image' && !empty($item->image))
-                            <img src="{{ asset('storage/' . $item->image) }}" class="card-img-top" alt="{{ $item->caption }}">
+                        @if($item->media_type == 'image' && (!empty($item->image) || $item->mediaImage))
+                            <img src="{{ $item->publicUrl() }}" class="card-img-top" alt="{{ $item->caption }}" style="height: 180px; object-fit: cover;">
                         @elseif($item->media_type != 'image')
                             @if($item->youtube_link)
-                                <div class="card-img-top bg-dark text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <div class="card-img-top bg-dark text-white d-flex align-items-center justify-content-center" style="height: 180px;">
                                     <i class="fa fa-video fa-3x"></i>
                                 </div>
                             @elseif($item->thumbnail)
-                                <img src="{{ asset('storage/' . $item->thumbnail) }}" class="card-img-top" alt="{{ $item->caption }}">
+                                <img src="{{ asset('storage/' . $item->thumbnail) }}" class="card-img-top" alt="{{ $item->caption }}" style="height: 180px; object-fit: cover;">
                             @else
-                                <div class="card-img-top bg-dark text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <div class="card-img-top bg-dark text-white d-flex align-items-center justify-content-center" style="height: 180px;">
                                     <i class="fa fa-video fa-3x"></i>
                                 </div>
                             @endif
                         @endif
                         <div class="card-body">
-                            <p class="card-text">{{ $item->caption }}</p>
+                            <p class="card-text">{{ $item->caption ?: 'Untitled' }}</p>
                             <span class="badge bg-info">{{ ucfirst($item->media_type) }}</span>
-                            <button class="btn btn-sm btn-danger float-end" onclick="deleteGallery({{ $item->id }})">
-                                <i class="fa fa-trash"></i>
-                            </button>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="btn-group">
+                                    <form action="{{ route('content-management.gallery.move', $item->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <input type="hidden" name="direction" value="up">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Move up (towards top)">&uarr;</button>
+                                    </form>
+                                    <form action="{{ route('content-management.gallery.move', $item->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <input type="hidden" name="direction" value="down">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Move down">&darr;</button>
+                                    </form>
+                                </div>
+                                <form action="{{ route('content-management.gallery.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Remove this item from the public gallery page?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
-                @endforeach
+                @empty
+                <div class="col-12">
+                    <p class="text-muted">No gallery items yet. Add images from the media library or upload new ones.</p>
+                </div>
+                @endforelse
             </div>
         </div>
     </div>
 </div>
 
-<!-- Gallery Modal: add single/multiple images or video -->
 <div class="modal fade" id="galleryModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Add Gallery Item</h5>
@@ -64,15 +92,20 @@
                     <div class="mb-3">
                         <label class="form-label">Media Type *</label>
                         <select class="form-control" name="media_type" id="gallery_media_type" required onchange="toggleMediaFields()">
-                            <option value="image">Images (single or multiple)</option>
+                            <option value="image">Images (upload or select multiple)</option>
                             <option value="video">Video</option>
                         </select>
                     </div>
                     <div id="imageFields">
                         <div class="mb-3">
-                            <label class="form-label">Upload images *</label>
-                            <input type="file" class="form-control" name="images[]" id="gallery_image" accept="image/*" multiple>
-                            <small class="text-muted d-block mt-1">You can select multiple images at once; the same caption and category will apply to all.</small>
+                            <label class="form-label">Images</label>
+                            @include('content-management.includes.media-picker', [
+                                'pickerId' => 'galleryPicker',
+                                'multiple' => true,
+                                'existingName' => 'existing_media_ids[]',
+                                'fileName' => 'images[]',
+                                'fileId' => 'gallery_image',
+                            ])
                         </div>
                     </div>
                     <div id="videoFields" style="display: none;">
@@ -118,19 +151,14 @@ function toggleMediaFields() {
     if (mediaType === 'image') {
         document.getElementById('imageFields').style.display = 'block';
         document.getElementById('videoFields').style.display = 'none';
-        document.getElementById('gallery_image').setAttribute('required', 'required');
+        const img = document.getElementById('gallery_image');
+        if (img) img.removeAttribute('required');
         document.getElementById('gallery_video').required = false;
     } else {
         document.getElementById('imageFields').style.display = 'none';
         document.getElementById('videoFields').style.display = 'block';
-        document.getElementById('gallery_image').required = false;
-    }
-}
-
-function deleteGallery(id) {
-    if (confirm('Are you sure you want to delete this gallery item?')) {
-        // Implement delete functionality
-        alert('Delete functionality to be implemented');
+        const img = document.getElementById('gallery_image');
+        if (img) img.removeAttribute('required');
     }
 }
 </script>

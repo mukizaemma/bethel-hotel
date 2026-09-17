@@ -38,7 +38,7 @@ class PublicWebsiteData
             ->where('status', 'Active')
             ->latest()
             ->get();
-        $gallery = Gallery::latest()->take(9)->get();
+        $gallery = Gallery::query()->where('media_type', 'image')->with('mediaImage')->ordered()->take(9)->get();
         $homeFacilities = Facility::where('status', 'Active')->latest()->take(4)->get();
         $services = Service::where('status', 'Active')->with('images')->latest()->take(4)->get();
         $blogs = Blog::where('status', 'Published')->latest()->take(3)->get() ?? collect();

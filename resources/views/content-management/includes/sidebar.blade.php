@@ -78,6 +78,9 @@ $isEventsPageAdmin = $currentRoute === 'eventsPage' || str_contains(strtolower((
                 <i class="fas fa-user-friends me-2"></i>Team Members
             </a>
 
+            <a href="{{ route('content-management.media') }}" class="nav-item nav-link {{ str_contains($currentRoute, 'content-management.media') ? 'active' : '' }}">
+                <i class="fas fa-photo-video me-2"></i>Media Images
+            </a>
             <a href="{{ route('content-management.gallery') }}" class="nav-item nav-link {{ str_contains($currentRoute, 'content-management.gallery') ? 'active' : '' }}">
                 <i class="fas fa-images me-2"></i>Gallery
             </a>

@@ -121,8 +121,13 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Cover Image</label>
-                        <input type="file" class="form-control" id="facility_cover_image" name="cover_image" accept="image/*">
-                        <small class="text-muted">Optional - Main image for the facility</small>
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'facilityCoverPicker',
+                            'multiple' => false,
+                            'existingName' => 'existing_cover_media_id',
+                            'fileName' => 'cover_image',
+                            'fileId' => 'facility_cover_image',
+                        ])
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Gallery Images (Multiple)</label>
@@ -130,8 +135,13 @@
                             <span class="small text-muted d-block mb-2">Current gallery — use × to remove an image</span>
                             <div id="facilityExistingGalleryGrid" class="row g-2"></div>
                         </div>
-                        <input type="file" class="form-control" id="facility_images" name="images[]" multiple accept="image/*">
-                        <small class="text-muted">Optional — new files are added to the gallery above</small>
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'facilityGalleryPicker',
+                            'multiple' => true,
+                            'existingName' => 'existing_media_ids[]',
+                            'fileName' => 'images[]',
+                            'fileId' => 'facility_images',
+                        ])
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Status <span class="text-danger">*</span></label>
@@ -463,8 +473,14 @@ $(document).ready(function() {
                     <h6>Add More Gallery Images</h6>
                     <form id="addFacilityImagesForm" onsubmit="event.preventDefault(); addFacilityImages();">
                         <input type="hidden" id="addFacilityImagesFacilityId" name="facility_id">
-                        <input type="file" class="form-control mb-2" name="images[]" multiple accept="image/*" required>
-                        <button type="submit" class="btn btn-primary btn-sm">
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'addFacilityGalleryPicker',
+                            'multiple' => true,
+                            'existingName' => 'existing_media_ids[]',
+                            'fileName' => 'images[]',
+                            'fileId' => 'add_facility_images',
+                        ])
+                        <button type="submit" class="btn btn-primary btn-sm mt-2">
                             <i class="fa fa-plus"></i> Add Images
                         </button>
                     </form>

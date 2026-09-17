@@ -49,7 +49,7 @@
                     </div>
                 @empty
                     <div class="col-12 text-center py-5">
-                        <p class="text-muted mb-0">No images in the gallery yet. Add room, facility, or gallery photos from the admin.</p>
+                        <p class="text-muted mb-0">No images in the gallery yet. Add photos from the admin gallery page.</p>
                     </div>
                 @endforelse
             </div>

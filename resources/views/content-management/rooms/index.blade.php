@@ -135,12 +135,23 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Cover Image</label>
-                        <input type="file" class="form-control" id="room_cover_image" name="cover_image" accept="image/*">
-                        <small class="text-muted">Optional - Main image for the room</small>
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'roomCoverPicker',
+                            'multiple' => false,
+                            'existingName' => 'existing_cover_media_id',
+                            'fileName' => 'cover_image',
+                            'fileId' => 'room_cover_image',
+                        ])
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Gallery Images (Multiple)</label>
-                        <input type="file" class="form-control" id="room_images" name="images[]" multiple accept="image/*">
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'roomGalleryPicker',
+                            'multiple' => true,
+                            'existingName' => 'existing_media_ids[]',
+                            'fileName' => 'images[]',
+                            'fileId' => 'room_images',
+                        ])
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Amenities</label>
@@ -544,8 +555,14 @@ $(document).ready(function() {
                     <h6>Add More Gallery Images</h6>
                     <form id="addRoomImagesForm" onsubmit="event.preventDefault(); addRoomImages();">
                         <input type="hidden" id="addRoomImagesRoomId" name="room_id">
-                        <input type="file" class="form-control mb-2" name="images[]" multiple accept="image/*" required>
-                        <button type="submit" class="btn btn-primary btn-sm">
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'addRoomGalleryPicker',
+                            'multiple' => true,
+                            'existingName' => 'existing_media_ids[]',
+                            'fileName' => 'images[]',
+                            'fileId' => 'add_room_images',
+                        ])
+                        <button type="submit" class="btn btn-primary btn-sm mt-2">
                             <i class="fa fa-plus"></i> Add Images
                         </button>
                     </form>

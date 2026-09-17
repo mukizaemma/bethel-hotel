@@ -139,9 +139,19 @@ Route::middleware(['auth', 'admin'])->prefix('content-management')->name('conten
     Route::post('/attractions/{id}/update', [App\Http\Controllers\AttractionController::class, 'update'])->name('attractions.update');
     Route::delete('/attractions/{id}', [App\Http\Controllers\AttractionController::class, 'destroy'])->name('attractions.destroy');
     
+    // Media library
+    Route::get('/media', \App\Livewire\Admin\ContentManagementMedia::class)->name('media');
+    Route::get('/media/json', [App\Http\Controllers\MediaLibraryController::class, 'json'])->name('media.json');
+    Route::post('/media/store', [App\Http\Controllers\MediaLibraryController::class, 'store'])->name('media.store');
+    Route::delete('/media/duplicates', [App\Http\Controllers\MediaLibraryController::class, 'destroyDuplicates'])->name('media.duplicates');
+    Route::delete('/media/{id}', [App\Http\Controllers\MediaLibraryController::class, 'destroy'])->name('media.destroy');
+
     // Gallery
     Route::get('/gallery', ContentManagementGallery::class)->name('gallery');
     Route::post('/gallery/store', [App\Http\Controllers\ContentManagementController::class, 'storeGallery'])->name('gallery.store');
+    Route::post('/gallery/reorder', [App\Http\Controllers\ContentManagementController::class, 'reorderGallery'])->name('gallery.reorder');
+    Route::post('/gallery/{id}/move', [App\Http\Controllers\ContentManagementController::class, 'moveGallery'])->name('gallery.move');
+    Route::delete('/gallery/{id}', [App\Http\Controllers\ContentManagementController::class, 'destroyGallery'])->name('gallery.destroy');
     
     // Slideshow
     Route::get('/slideshow', ContentManagementSlideshow::class)->name('slideshow');

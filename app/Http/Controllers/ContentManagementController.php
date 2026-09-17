@@ -22,6 +22,8 @@ use App\Models\Facilityimage;
 use App\Models\PageHero;
 use App\Models\Booking;
 use App\Models\BookingTrash;
+use App\Models\MediaImage;
+use App\Services\MediaLibrary;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
@@ -409,41 +411,52 @@ class ContentManagementController extends Controller
     // Gallery Management
     public function gallery()
     {
-        $gallery = Gallery::latest()->get();
-        return view('content-management.gallery.index', compact('gallery'));
+        $gallery = Gallery::query()->with('mediaImage')->ordered()->get();
+        $mediaImages = MediaImage::query()->latest()->get();
+
+        return view('content-management.gallery.index', compact('gallery', 'mediaImages'));
     }
 
     public function storeGallery(Request $request)
     {
+        $mediaLibrary = app(MediaLibrary::class);
+
         if ($request->media_type === 'image') {
             $files = $request->file('images');
             if (empty($files)) {
                 $files = $request->hasFile('image') ? [$request->file('image')] : [];
             }
-            if (!is_array($files)) {
+            if (! is_array($files)) {
                 $files = [$files];
             }
             $count = 0;
             $caption = $request->input('caption');
             $category = $request->input('category');
+
             foreach ($files as $file) {
-                if (!$file || !$file->isValid()) {
+                if (! $file || ! $file->isValid()) {
                     continue;
                 }
-                $gallery = new Gallery();
-                $gallery->media_type = 'image';
-                $gallery->category = $category;
-                $gallery->caption = $caption;
-                $gallery->image = $file->store('gallery', 'public');
-                $gallery->save();
+                $media = $mediaLibrary->ingestUploadedFile($file);
+                $item = $mediaLibrary->attachToGallery($media, $caption, $category);
+                if ($caption && ! $item->caption) {
+                    $item->caption = $caption;
+                    $item->category = $category;
+                    $item->save();
+                }
                 $count++;
             }
-            if ($count === 0) {
-                return redirect()->back()->with('error', 'Please select at least one image to upload.');
+
+            foreach ($mediaLibrary->findMany((array) $request->input('existing_media_ids', [])) as $media) {
+                $mediaLibrary->attachToGallery($media, $caption, $category);
+                $count++;
             }
-            return redirect()->back()->with('success', $count === 1
-                ? 'Gallery image added successfully.'
-                : $count . ' gallery images added successfully.');
+
+            if ($count === 0) {
+                return redirect()->back()->with('error', 'Upload new images or select existing ones from the media library.');
+            }
+
+            return redirect()->back()->with('success', 'Gallery images updated successfully.');
         }
 
         $gallery = new Gallery();
@@ -461,9 +474,55 @@ class ContentManagementController extends Controller
             $gallery->thumbnail = $request->file('thumbnail')->store('gallery', 'public');
         }
 
+        $gallery->sort_order = ((int) Gallery::query()->max('sort_order')) + 1;
         $gallery->save();
 
         return redirect()->back()->with('success', 'Gallery item added successfully');
+    }
+
+    public function destroyGallery($id)
+    {
+        $item = Gallery::findOrFail($id);
+        $item->delete();
+
+        return redirect()->back()->with('warning', 'Item removed from the gallery page.');
+    }
+
+    public function reorderGallery(Request $request)
+    {
+        $ids = array_values(array_filter(array_map('intval', (array) $request->input('order', []))));
+        $count = count($ids);
+        foreach ($ids as $index => $id) {
+            Gallery::query()->where('id', $id)->update(['sort_order' => $count - $index]);
+        }
+
+        return redirect()->back()->with('success', 'Gallery order saved.');
+    }
+
+    public function moveGallery(Request $request, $id)
+    {
+        $direction = $request->input('direction');
+        $items = Gallery::query()->ordered()->get()->values();
+        $index = $items->search(fn (Gallery $item) => (int) $item->id === (int) $id);
+        if ($index === false) {
+            return redirect()->back()->with('error', 'Gallery item not found.');
+        }
+
+        $swapWith = $direction === 'up' ? $index - 1 : $index + 1;
+        if ($swapWith < 0 || $swapWith >= $items->count()) {
+            return redirect()->back();
+        }
+
+        $temp = $items[$index];
+        $items[$index] = $items[$swapWith];
+        $items[$swapWith] = $temp;
+        $count = $items->count();
+        foreach ($items as $i => $item) {
+            $item->sort_order = $count - $i;
+            $item->save();
+        }
+
+        return redirect()->back()->with('success', 'Gallery order updated.');
     }
 
     // Slideshow Management

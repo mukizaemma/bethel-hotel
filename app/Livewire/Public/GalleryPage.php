@@ -2,11 +2,7 @@
 
 namespace App\Livewire\Public;
 
-use App\Models\Facility;
-use App\Models\Facilityimage;
 use App\Models\Gallery;
-use App\Models\Room;
-use App\Models\Roomimage;
 use App\Services\PublicWebsiteData;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -59,131 +55,34 @@ class GalleryPage extends Component
     protected function buildGalleryItems(): array
     {
         $items = [];
-        $seenUrls = [];
-
-        $push = function (string $id, string $url, string $caption, string $category) use (&$items, &$seenUrls): void {
-            $url = trim($url);
-            if ($url === '' || isset($seenUrls[$url])) {
-                return;
-            }
-            $seenUrls[$url] = true;
-            $items[] = [
-                'id' => $id,
-                'url' => $url,
-                'caption' => $caption,
-                'category' => $category,
-            ];
-        };
+        $seen = [];
 
         Gallery::query()
+            ->with('mediaImage')
             ->where('media_type', 'image')
-            ->whereNotNull('image')
-            ->where('image', '!=', '')
-            ->oldest('id')
+            ->ordered()
             ->get()
-            ->each(function (Gallery $img) use ($push): void {
-                $push(
-                    'cms-'.$img->id,
-                    $this->storageUrl($img->image, 'images/gallery'),
-                    (string) ($img->caption ?? ''),
-                    'Hotel'
-                );
-            });
-
-        Room::query()
-            ->where('status', 'Active')
-            ->with('images')
-            ->oldest('id')
-            ->get()
-            ->each(function (Room $room) use ($push): void {
-                if (filled($room->cover_image)) {
-                    $push(
-                        'room-cover-'.$room->id,
-                        $this->storageUrl($room->cover_image, 'rooms'),
-                        $room->title.' — cover',
-                        'Rooms'
-                    );
-                } elseif (filled($room->image)) {
-                    $push(
-                        'room-main-'.$room->id,
-                        $this->storageUrl($room->image, 'images/rooms'),
-                        $room->title,
-                        'Rooms'
-                    );
+            ->each(function (Gallery $img) use (&$items, &$seen): void {
+                $url = $img->publicUrl();
+                $key = $img->media_image_id ? 'media-'.$img->media_image_id : $url;
+                if ($url === '' || isset($seen[$key]) || isset($seen[$url])) {
+                    return;
                 }
-
-                $room->images->each(function (Roomimage $img) use ($push, $room): void {
-                    if (! filled($img->image)) {
-                        return;
-                    }
-                    $push(
-                        'room-img-'.$img->id,
-                        $this->storageUrl($img->image, 'images/rooms'),
-                        filled($img->caption) ? (string) $img->caption : $room->title,
-                        'Rooms'
-                    );
-                });
-            });
-
-        Facility::query()
-            ->where('status', 'Active')
-            ->with('images')
-            ->oldest('id')
-            ->get()
-            ->each(function (Facility $facility) use ($push): void {
-                if (filled($facility->cover_image)) {
-                    $push(
-                        'facility-cover-'.$facility->id,
-                        $this->storageUrl($facility->cover_image, 'facilities'),
-                        $facility->title.' — cover',
-                        'Facilities'
-                    );
-                } elseif (filled($facility->image)) {
-                    $push(
-                        'facility-main-'.$facility->id,
-                        $this->storageUrl($facility->image, 'facilities'),
-                        $facility->title,
-                        'Facilities'
-                    );
-                }
-
-                $facility->images->each(function (Facilityimage $img) use ($push, $facility): void {
-                    if (! filled($img->image)) {
-                        return;
-                    }
-                    $push(
-                        'facility-img-'.$img->id,
-                        $this->storageUrl($img->image, 'facilities'),
-                        filled($img->caption) ? (string) $img->caption : $facility->title,
-                        'Facilities'
-                    );
-                });
+                $seen[$key] = true;
+                $seen[$url] = true;
+                $items[] = [
+                    'id' => 'cms-'.$img->id,
+                    'url' => $url,
+                    'caption' => (string) ($img->caption ?? ''),
+                    'category' => (string) ($img->category ?: 'Hotel'),
+                ];
             });
 
         return $items;
     }
 
-    protected function storageUrl(?string $path, string $legacyPrefix): string
-    {
-        $path = ltrim((string) $path, '/');
-        if ($path === '') {
-            return '';
-        }
-
-        if (str_contains($path, '/') || str_starts_with($path, 'gallery/') || str_starts_with($path, 'rooms/') || str_starts_with($path, 'facilities/')) {
-            return asset('storage/'.$path);
-        }
-
-        return asset('storage/'.trim($legacyPrefix, '/').'/'.$path);
-    }
-
     public function render()
     {
-        return view('frontend.gallery', array_merge(
-            PublicWebsiteData::galleryPageStatic(),
-            [
-                'rooms' => Room::where('status', 'Active')->oldest()->get(),
-            ]
-        ));
+        return view('frontend.gallery', PublicWebsiteData::galleryPageStatic());
     }
 }
