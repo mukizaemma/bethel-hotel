@@ -19,7 +19,7 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="{{ $pickerId }}-upload" role="tabpanel">
             <input type="file" class="form-control" name="{{ $fileName }}" @if($fileId) id="{{ $fileId }}" @endif accept="image/*" @if($multiple) multiple @endif @if($fileRequired) required @endif>
-            <small class="text-muted d-block mt-1">Files over 700 KB are compressed automatically. Leave empty if you are selecting existing images.</small>
+            <small class="text-muted d-block mt-1">{{ $pickerHint ?? 'Files over 700 KB are compressed automatically. Leave empty if you are selecting existing images.' }}</small>
         </div>
         <div class="tab-pane fade" id="{{ $pickerId }}-library" role="tabpanel">
             <div class="media-picker-selected mb-2 small text-muted">None selected</div>

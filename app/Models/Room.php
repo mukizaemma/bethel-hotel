@@ -74,31 +74,49 @@ class Room extends Model
         return $base + ($extraAdults * $ea) + ($extraChildren * $ec) + ($extraBeds * $eb);
     }
 
+    public function coverImageUrl(): ?string
+    {
+        $path = filled($this->cover_image) ? $this->cover_image : $this->image;
+        if (! filled($path)) {
+            return null;
+        }
+
+        return asset('storage/'.ltrim($this->normalizeRoomImagePath((string) $path), '/'));
+    }
+
     /**
      * Public URL for listing cards and "Other rooms" blocks.
      * Paths in DB are relative to the storage disk root (same as asset('storage/…')).
      */
     public function publicThumbnailUrl(): string
     {
-        if (filled($this->cover_image)) {
-            return asset('storage/'.ltrim($this->cover_image, '/'));
-        }
+        return $this->coverImageUrl()
+            ?? $this->firstGalleryImageUrl()
+            ?? asset('storage/rooms/default.jpg');
+    }
+
+    public function firstGalleryImageUrl(): ?string
+    {
 
         $firstImg = $this->relationLoaded('images')
             ? $this->images->sortBy('id')->first()
             : $this->images()->orderBy('id')->first();
 
         if ($firstImg && filled($firstImg->image)) {
-            $path = $firstImg->image;
-
-            return asset('storage/'.ltrim($this->normalizeRoomImagePath($path), '/'));
+            return asset('storage/'.ltrim($this->normalizeRoomImagePath($firstImg->image), '/'));
         }
 
-        if (filled($this->image)) {
-            return asset('storage/'.ltrim($this->normalizeRoomImagePath($this->image), '/'));
+        return null;
+    }
+
+    public static function storageUrl(?string $path): string
+    {
+        $path = ltrim((string) $path, '/');
+        if ($path === '') {
+            return '';
         }
 
-        return asset('storage/rooms/default.jpg');
+        return asset('storage/'.(str_contains($path, '/') ? $path : 'images/rooms/'.$path));
     }
 
     /**

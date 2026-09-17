@@ -20,6 +20,7 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Cover</th>
                             <th>Title</th>
                             <th>Rooms</th>
                             <th>Status</th>
@@ -33,6 +34,13 @@
                         @foreach($rooms->where('room_type', 'room') as $room)
                         <tr>
                             <td>{{ $room->id }}</td>
+                            <td>
+                                @if($room->coverImageUrl())
+                                    <img src="{{ $room->coverImageUrl() }}" alt="{{ $room->title }}" style="width: 72px; height: 48px; object-fit: cover; border-radius: 6px;">
+                                @else
+                                    <span class="text-muted">No cover</span>
+                                @endif
+                            </td>
                             <td>{{ $room->title }}</td>
                             <td>{{ $room->number_of_rooms ?? 1 }}</td>
                             <td><span class="badge bg-{{ $room->status == 'Active' ? 'success' : 'danger' }}">{{ $room->status }}</span></td>
@@ -135,22 +143,32 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Cover Image</label>
+                        <div id="roomCurrentCoverWrap" class="mb-3" style="display: none;">
+                            <span class="small text-muted d-block mb-2">Current cover — uploading or selecting another image replaces this photo.</span>
+                            <img id="roomCurrentCover" src="" alt="Current cover" class="rounded border" style="width: 180px; height: 120px; object-fit: cover;">
+                        </div>
                         @include('content-management.includes.media-picker', [
                             'pickerId' => 'roomCoverPicker',
                             'multiple' => false,
                             'existingName' => 'existing_cover_media_id',
                             'fileName' => 'cover_image',
                             'fileId' => 'room_cover_image',
+                            'pickerHint' => 'A new upload or library selection replaces the current cover. Files over 700 KB are compressed automatically.',
                         ])
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Gallery Images (Multiple)</label>
+                        <div id="roomExistingGalleryWrap" class="mb-3" style="display: none;">
+                            <span class="small text-muted d-block mb-2">Current gallery (newest first) — use × to remove an image. New uploads or library picks are added to this gallery.</span>
+                            <div id="roomExistingGalleryGrid" class="row g-2"></div>
+                        </div>
                         @include('content-management.includes.media-picker', [
                             'pickerId' => 'roomGalleryPicker',
                             'multiple' => true,
                             'existingName' => 'existing_media_ids[]',
                             'fileName' => 'images[]',
                             'fileId' => 'room_images',
+                            'pickerHint' => 'New files and library picks are added to the gallery above. Files over 700 KB are compressed automatically.',
                         ])
                     </div>
                     <div class="mb-3">
@@ -227,6 +245,67 @@ function resetForm() {
     if ($('#room_description').summernote('code') !== undefined) {
         $('#room_description').summernote('code', '');
     }
+    hideRoomEditImages();
+}
+
+function hideRoomEditImages() {
+    const coverWrap = document.getElementById('roomCurrentCoverWrap');
+    const coverImg = document.getElementById('roomCurrentCover');
+    const galleryWrap = document.getElementById('roomExistingGalleryWrap');
+    const galleryGrid = document.getElementById('roomExistingGalleryGrid');
+    if (coverWrap) coverWrap.style.display = 'none';
+    if (coverImg) coverImg.removeAttribute('src');
+    if (galleryWrap) galleryWrap.style.display = 'none';
+    if (galleryGrid) galleryGrid.innerHTML = '';
+}
+
+function renderRoomEditCover(url) {
+    const wrap = document.getElementById('roomCurrentCoverWrap');
+    const img = document.getElementById('roomCurrentCover');
+    if (!wrap || !img) return;
+    if (url) {
+        img.src = url;
+        wrap.style.display = 'block';
+    } else {
+        img.removeAttribute('src');
+        wrap.style.display = 'none';
+    }
+}
+
+function renderRoomEditGallery(images, roomId) {
+    const wrap = document.getElementById('roomExistingGalleryWrap');
+    const grid = document.getElementById('roomExistingGalleryGrid');
+    if (!wrap || !grid) return;
+    wrap.style.display = 'block';
+    if (!images || images.length === 0) {
+        grid.innerHTML = '<p class="text-muted small mb-0">No gallery images yet. Upload or select images below to add some.</p>';
+        return;
+    }
+    let html = '';
+    images.forEach(image => {
+        const src = image.url || `{{ asset('storage/') }}/${image.image}`;
+        html += `
+            <div class="col-6 col-md-4 col-lg-3 position-relative">
+                <img src="${src}" class="img-fluid rounded border" style="height: 120px; width: 100%; object-fit: cover;" alt="">
+                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" onclick="deleteRoomImage(${image.id}, ${roomId})" style="z-index: 10;" title="Remove image">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        `;
+    });
+    grid.innerHTML = html;
+}
+
+function refreshRoomImages(roomId) {
+    fetch(`{{ route('content-management.rooms.show', ':id') }}`.replace(':id', roomId))
+        .then(response => response.json())
+        .then(data => {
+            renderRoomEditCover(data.cover_image_url);
+            renderRoomEditGallery(data.images || [], roomId);
+            if (document.getElementById('viewRoomModal')?.classList.contains('show')) {
+                fillViewRoomMedia(data, roomId);
+            }
+        });
 }
 
 function editRoom(id) {
@@ -257,6 +336,12 @@ function editRoom(id) {
             }
             
             document.getElementById('roomModalTitle').textContent = 'Edit Room';
+            const coverInput = document.getElementById('room_cover_image');
+            if (coverInput) coverInput.value = '';
+            const galleryInput = document.getElementById('room_images');
+            if (galleryInput) galleryInput.value = '';
+            renderRoomEditCover(data.cover_image_url);
+            renderRoomEditGallery(data.images || [], id);
             new bootstrap.Modal(document.getElementById('roomModal')).show();
         });
 }
@@ -380,30 +465,7 @@ function viewRoom(id) {
             `;
             
             // Display cover image
-            const coverImageHtml = data.cover_image 
-                ? `<img src="{{ asset('storage/') }}/${data.cover_image}" class="img-fluid rounded mb-3" style="max-height: 300px; width: 100%; object-fit: cover;">`
-                : '<p class="text-muted">No cover image</p>';
-            document.getElementById('viewRoomCoverImage').innerHTML = coverImageHtml;
-            
-            // Display gallery images
-            let galleryHtml = '';
-            if (data.images && data.images.length > 0) {
-                galleryHtml = '<div class="row g-2">';
-                data.images.forEach(image => {
-                    galleryHtml += `
-                        <div class="col-md-3 position-relative">
-                            <img src="{{ asset('storage/') }}/${image.image}" class="img-fluid rounded" style="height: 150px; width: 100%; object-fit: cover;">
-                            <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" onclick="deleteRoomImage(${image.id}, ${id})" style="z-index: 10;">
-                                <i class="fa fa-times"></i>
-                            </button>
-                        </div>
-                    `;
-                });
-                galleryHtml += '</div>';
-            } else {
-                galleryHtml = '<p class="text-muted">No gallery images</p>';
-            }
-            document.getElementById('viewRoomGallery').innerHTML = galleryHtml;
+            fillViewRoomMedia(data, id);
             
             // Set room ID for adding images
             document.getElementById('addRoomImagesRoomId').value = id;
@@ -412,19 +474,47 @@ function viewRoom(id) {
         });
 }
 
+function fillViewRoomMedia(data, roomId) {
+    const coverUrl = data.cover_image_url || (data.cover_image ? `{{ asset('storage/') }}/${data.cover_image}` : '');
+    document.getElementById('viewRoomCoverImage').innerHTML = coverUrl
+        ? `<img src="${coverUrl}" class="img-fluid rounded mb-3" style="max-height: 300px; width: 100%; object-fit: cover;">`
+        : '<p class="text-muted">No cover image</p>';
+
+    let galleryHtml = '';
+    if (data.images && data.images.length > 0) {
+        galleryHtml = '<div class="row g-2">';
+        data.images.forEach(image => {
+            const src = image.url || `{{ asset('storage/') }}/${image.image}`;
+            galleryHtml += `
+                <div class="col-md-3 position-relative">
+                    <img src="${src}" class="img-fluid rounded" style="height: 150px; width: 100%; object-fit: cover;">
+                    <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" onclick="deleteRoomImage(${image.id}, ${roomId})" style="z-index: 10;">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            `;
+        });
+        galleryHtml += '</div>';
+    } else {
+        galleryHtml = '<p class="text-muted">No gallery images</p>';
+    }
+    document.getElementById('viewRoomGallery').innerHTML = galleryHtml;
+}
+
 function deleteRoomImage(imageId, roomId) {
-    if (confirm('Are you sure you want to delete this image?')) {
+    if (confirm('Remove this image from the room gallery?')) {
         fetch(`{{ route('content-management.rooms.delete-image', ':id') }}`.replace(':id', imageId), {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                viewRoom(roomId); // Refresh view
+                refreshRoomImages(roomId);
             }
         });
     }
@@ -447,7 +537,8 @@ function addRoomImages() {
     .then(data => {
         if (data.success) {
             document.getElementById('addRoomImagesForm').reset();
-            viewRoom(roomId); // Refresh view
+            refreshRoomImages(roomId);
+            viewRoom(roomId);
         }
     });
 }

@@ -122,7 +122,20 @@ class RoomManagementController extends Controller
     public function show($id)
     {
         $room = Room::with(['amenities', 'images'])->findOrFail($id);
-        return response()->json($room);
+        $payload = $room->toArray();
+        $payload['cover_image_url'] = $room->coverImageUrl();
+        $payload['images'] = $room->images
+            ->sortByDesc('id')
+            ->values()
+            ->map(function (Roomimage $image) {
+                return [
+                    'id' => $image->id,
+                    'image' => $image->image,
+                    'url' => Room::storageUrl($image->image),
+                ];
+            });
+
+        return response()->json($payload);
     }
 
     public function deleteImage($id)
@@ -177,6 +190,7 @@ class RoomManagementController extends Controller
         if ($request->hasFile('cover_image')) {
             $media = $this->mediaLibrary->ingestUploadedFile($request->file('cover_image'), 'rooms');
             $room->cover_image = $media->path;
+            $room->image = $media->path;
 
             return;
         }
@@ -185,6 +199,7 @@ class RoomManagementController extends Controller
             $cover = $this->mediaLibrary->findMany([(int) $request->input('existing_cover_media_id')])->first();
             if ($cover) {
                 $room->cover_image = $cover->path;
+                $room->image = $cover->path;
             }
         }
     }
