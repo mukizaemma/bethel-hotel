@@ -6,6 +6,7 @@ use App\Models\Facility;
 use App\Models\Facilityimage;
 use App\Models\Gallery;
 use App\Models\MediaImage;
+use App\Models\PageHero;
 use App\Models\Room;
 use App\Models\Roomimage;
 use Illuminate\Http\UploadedFile;
@@ -142,6 +143,12 @@ class MediaLibrary
             }
         });
 
+        PageHero::query()->get()->each(function (PageHero $hero) use ($register) {
+            if (filled($hero->background_image)) {
+                $register((string) $hero->background_image);
+            }
+        });
+
         $this->dedupeGalleryRows();
 
         foreach ($seenHashes as $media) {
@@ -189,7 +196,7 @@ class MediaLibrary
         $hash = is_file($full) ? (string) md5_file($full) : md5($path);
         $existing = MediaImage::query()->where('hash', $hash)->first();
         if ($existing) {
-            if ($existing->path !== $path && str_starts_with($path, 'media/')) {
+            if ($existing->path !== $path) {
                 Storage::disk('public')->delete($path);
             }
 
@@ -216,7 +223,7 @@ class MediaLibrary
             return $path;
         }
 
-        foreach (['images/gallery/'.$path, 'gallery/'.$path, 'images/rooms/'.$path, 'rooms/'.$path, 'facilities/'.$path] as $candidate) {
+        foreach (['images/gallery/'.$path, 'gallery/'.$path, 'images/rooms/'.$path, 'rooms/'.$path, 'facilities/'.$path, 'page-heroes/'.$path] as $candidate) {
             if (Storage::disk('public')->exists($candidate)) {
                 return $candidate;
             }

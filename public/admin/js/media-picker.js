@@ -102,6 +102,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('shown.bs.modal', init);
     document.addEventListener('livewire:navigated', () => {
         cache = null;
         document.querySelectorAll('.media-picker').forEach((el) => { el.dataset.bound = '0'; });

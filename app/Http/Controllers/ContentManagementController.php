@@ -24,7 +24,6 @@ use App\Models\Booking;
 use App\Models\BookingTrash;
 use App\Models\MediaImage;
 use App\Services\MediaLibrary;
-use App\Services\ImageOptimizer;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
@@ -699,6 +698,12 @@ class ContentManagementController extends Controller
 
         $defaultHero = $pageHeroes->firstWhere('page_slug', 'default');
         $heroPaths = collect($definitions)->map(fn ($m) => $m['path'])->all();
+        $mediaLibrary = app(MediaLibrary::class);
+        foreach ($pageHeroes as $hero) {
+            if (filled($hero->background_image)) {
+                $mediaLibrary->ingestStoredPath($hero->background_image);
+            }
+        }
 
         return view('content-management.page-heroes.index', compact('pageHeroes', 'heroPaths', 'defaultHero'));
     }
@@ -708,27 +713,30 @@ class ContentManagementController extends Controller
         try {
             $request->validate([
                 'background_image' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:10240',
+                'existing_media_id' => 'nullable|integer|exists:media_images,id',
                 'caption' => 'nullable|string|max:255',
                 'description' => 'nullable|string|max:500',
             ]);
 
             $pageHero = PageHero::findOrFail($id);
+            $mediaLibrary = app(MediaLibrary::class);
 
-            if ($request->boolean('remove_background_image') && $pageHero->background_image) {
-                Storage::disk('public')->delete($pageHero->background_image);
+            if ($request->hasFile('background_image')) {
+                $media = $mediaLibrary->ingestUploadedFile($request->file('background_image'));
+                $pageHero->background_image = $media->path;
+            } elseif ($request->filled('existing_media_id')) {
+                $media = $mediaLibrary->findMany([(int) $request->input('existing_media_id')])->first();
+                if ($media) {
+                    $pageHero->background_image = $media->path;
+                }
+            } elseif ($request->boolean('remove_background_image')) {
                 $pageHero->background_image = null;
             }
 
-            if ($request->hasFile('background_image')) {
-                if ($pageHero->background_image) {
-                    Storage::disk('public')->delete($pageHero->background_image);
-                }
-                $pageHero->background_image = app(ImageOptimizer::class)
-                    ->store($request->file('background_image'), 'page-heroes');
+            if ($pageHero->page_slug !== 'default') {
+                $pageHero->caption = $request->input('caption', '');
+                $pageHero->description = $request->input('description', '');
             }
-
-            $pageHero->caption = $request->input('caption', '');
-            $pageHero->description = $request->input('description', '');
             $pageHero->is_active = true;
             $saved = $pageHero->save();
 

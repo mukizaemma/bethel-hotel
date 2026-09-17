@@ -8,7 +8,7 @@
             <div class="mb-4">
                 <h4 class="mb-2">Page header images</h4>
                 <p class="text-muted small mb-0">
-                    Only pages that appear on the public website are listed. Set one <strong>default</strong> header for all of them, then change a page individually when it needs a different photo. Images over 700&nbsp;KB are compressed automatically.
+                    Only pages that appear on the public website are listed. Set one <strong>default</strong> header for all of them, then change a page individually when it needs a different photo. Upload a new file or pick one already in the media library so the same image is not stored twice.
                 </p>
             </div>
 
@@ -108,9 +108,9 @@
                                 @csrf
                                 <div class="modal-body">
                                     @if($isDefault)
-                                        <p class="small text-muted">This photo is shown on all public pages listed here until you upload a different one for a specific page.</p>
+                                        <p class="small text-muted">This photo is shown on all public pages listed here until a page has its own image.</p>
                                     @else
-                                        <p class="small text-muted">Leave the image empty to keep using the default header. Upload here only if this page needs its own photo.</p>
+                                        <p class="small text-muted">Leave the image empty to keep using the default header. Upload or select a photo only if this page needs its own.</p>
                                     @endif
                                     <div class="mb-3">
                                         <label class="form-label">Background image</label>
@@ -122,11 +122,14 @@
                                                      style="max-height: 200px;">
                                             </div>
                                         @endif
-                                        <input type="file"
-                                               class="form-control"
-                                               name="background_image"
-                                               accept="image/jpeg,image/png,image/gif,image/webp">
-                                        <small class="form-text text-muted">JPEG, PNG, GIF or WebP. Files over 700 KB are compressed.</small>
+                                        @include('content-management.includes.media-picker', [
+                                            'pickerId' => 'hero-picker-'.$pageHero->id,
+                                            'multiple' => false,
+                                            'existingName' => 'existing_media_id',
+                                            'fileName' => 'background_image',
+                                            'fileId' => 'hero_image_'.$pageHero->id,
+                                            'pickerHint' => 'Upload a new photo or select one already in the library. Files over 700 KB are compressed. Matching files reuse the existing library image.',
+                                        ])
                                     </div>
                                     @if($pageHero->background_image)
                                     <div class="mb-3 form-check">
