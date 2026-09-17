@@ -24,54 +24,46 @@
         <div class="tab-content">
             <div id="about" class="tab-pane fade show active">
                 <div class="bg-light rounded h-100 p-4">
-                    <h4 class="mb-4">About Hotel</h4>
+                    <h4 class="mb-2">About Hotel</h4>
+                    <p class="text-muted small mb-4">Only fields that appear on the public Home and About pages are listed here.</p>
                     <form action="{{ route('content-management.about.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3">
-                            <label class="form-label">Title</label>
-                            <input type="text" class="form-control" name="title" value="{{ $about->title ?? '' }}">
+                            <label class="form-label">Heading on About page</label>
+                            <input type="text" class="form-control" name="title" value="{{ $about->title ?? '' }}" placeholder="e.g. Welcome to Bethel Hotel">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Sub Title</label>
-                            <input type="text" class="form-control" name="subTitle" value="{{ $about->subTitle ?? '' }}">
+                            <label class="form-label">Short line under the heading</label>
+                            <input type="text" class="form-control" name="subTitle" value="{{ $about->subTitle ?? '' }}" placeholder="e.g. A quiet, affordable stay in Rubengera">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Founder Description</label>
-                            <textarea class="form-control" name="founderDescription" rows="4">{{ $about->founderDescription ?? '' }}</textarea>
+                            <label class="form-label">Welcome text (Home &amp; About)</label>
+                            <textarea class="form-control" name="founderDescription" rows="6">{{ $about->founderDescription ?? '' }}</textarea>
+                            <small class="text-muted">Shown in the welcome section on the homepage and on the About page.</small>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Vision</label>
-                            <textarea class="form-control" name="vision" rows="4">{{ $about->vision ?? '' }}</textarea>
+                            <label class="form-label">Homepage quote</label>
+                            <textarea class="form-control" name="vision" rows="3">{{ $about->vision ?? '' }}</textarea>
+                            <small class="text-muted">Short line overlaid on the large photo in the middle of the homepage.</small>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Mission</label>
+                            <label class="form-label">Mission (About page)</label>
                             <textarea class="form-control" name="mission" rows="4">{{ $about->mission ?? '' }}</textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Story Description</label>
-                            <textarea class="form-control" name="storyDescription" rows="4">{{ $about->storyDescription ?? '' }}</textarea>
+                            <label class="form-label">Community &amp; values (About page)</label>
+                            <textarea class="form-control" name="storyDescription" rows="5">{{ $about->storyDescription ?? '' }}</textarea>
+                            <small class="text-muted">Christian values, community support, and how hotel income helps the Rubengera Presbytery (EPR).</small>
                         </div>
                         <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Image 1</label>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">About page photo</label>
                                 <input type="file" class="form-control" name="image1" accept="image/*">
                             </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Image 2</label>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Homepage middle photo</label>
                                 <input type="file" class="form-control" name="image2" accept="image/*">
                             </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Image 3</label>
-                                <input type="file" class="form-control" name="image3" accept="image/*">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Image 4</label>
-                                <input type="file" class="form-control" name="image4" accept="image/*">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Story Image</label>
-                            <input type="file" class="form-control" name="storyImage" accept="image/*">
                         </div>
                         <button type="submit" class="btn btn-primary">Update About</button>
                     </form>

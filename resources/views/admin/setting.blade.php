@@ -367,17 +367,31 @@
                             <fieldset class="mb-4">
                                 <legend class="h6 text-secondary border-bottom pb-2 mb-3">Main content</legend>
                                 <div class="mb-3">
-                                    <label class="form-label">Title</label>
+                                    <label class="form-label">Heading on About page</label>
                                     <input type="text" class="form-control" name="title" value="{{ optional($about)->title ?? '' }}">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">Sub title</label>
+                                    <label class="form-label">Short line under the heading</label>
                                     <input type="text" class="form-control" name="subTitle" value="{{ optional($about)->subTitle ?? '' }}">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label" for="founderDescription">About page narrative</label>
-                                    <p class="text-muted small mb-2">Story text for the public About / home sections. Legal policies belong under <strong>Terms &amp; Conditions</strong>.</p>
+                                    <label class="form-label" for="founderDescription">Welcome text (Home &amp; About)</label>
+                                    <p class="text-muted small mb-2">Shown on the public homepage and About page. Legal policies belong under <strong>Terms &amp; Conditions</strong>.</p>
                                     <textarea class="form-control" name="founderDescription" rows="6" id="founderDescription">{{ optional($about)->founderDescription ?? '' }}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Homepage quote</label>
+                                    <textarea class="form-control" name="vision" rows="3">{{ optional($about)->vision ?? '' }}</textarea>
+                                    <small class="text-muted">Shown over the large photo in the middle of the homepage.</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Mission (About page)</label>
+                                    <textarea class="form-control" name="mission" rows="4">{{ optional($about)->mission ?? '' }}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Community &amp; values (About page)</label>
+                                    <textarea class="form-control" name="storyDescription" rows="5">{{ optional($about)->storyDescription ?? '' }}</textarea>
+                                    <small class="text-muted">Christian values and how hotel income supports the Rubengera Presbytery (EPR).</small>
                                 </div>
                             </fieldset>
                             <fieldset class="mb-0">
@@ -396,27 +410,6 @@
                                             <div class="mb-2"><img src="{{ asset('storage/' . $about->image2) }}" alt="" class="img-thumbnail" style="max-height: 60px;"></div>
                                         @endif
                                         <input type="file" class="form-control" name="image2" accept="image/*">
-                                    </div>
-                                    <div class="col-md-6 col-lg-3">
-                                        <label class="form-label">Image 3</label>
-                                        @if($about && $about->image3)
-                                            <div class="mb-2"><img src="{{ asset('storage/' . $about->image3) }}" alt="" class="img-thumbnail" style="max-height: 60px;"></div>
-                                        @endif
-                                        <input type="file" class="form-control" name="image3" accept="image/*">
-                                    </div>
-                                    <div class="col-md-6 col-lg-3">
-                                        <label class="form-label">Image 4</label>
-                                        @if($about && $about->image4)
-                                            <div class="mb-2"><img src="{{ asset('storage/' . $about->image4) }}" alt="" class="img-thumbnail" style="max-height: 60px;"></div>
-                                        @endif
-                                        <input type="file" class="form-control" name="image4" accept="image/*">
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label">Story image</label>
-                                        @if($about && $about->storyImage)
-                                            <div class="mb-2"><img src="{{ asset('storage/' . $about->storyImage) }}" alt="" class="img-thumbnail" style="max-height: 80px;"></div>
-                                        @endif
-                                        <input type="file" class="form-control" name="storyImage" accept="image/*">
                                     </div>
                                 </div>
                             </fieldset>

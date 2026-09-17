@@ -34,7 +34,7 @@
                         
                         <!-- Body: full width, left-aligned for readable columns -->
                         <div class="home-welcome__prose wow fadeInUp" data-wow-delay=".4s">
-                            {!! $about?->founderDescription ?? '<p>Bethel Hotel is a 2-star hotel in Rubengera, Karongi — perfectly suited for workshops, seminars, and comfortable stays in Western Rwanda.</p>' !!}
+                            {!! $about?->founderDescription ?? '<p>Bethel Hotel is an affordable, Christian-led hotel in Rubengera — a quiet home away from home for workshops, events, and individual travellers, with green surroundings, strong internet, and a kitchen that serves bed and breakfast as well as catering.</p>' !!}
                         </div>
                         
                         <div class="text-center home-welcome__cta wow fadeInUp" data-wow-delay=".5s" style="margin-top: 2.25rem;">
@@ -61,7 +61,7 @@
             <div class="col-lg-8 wow fadeInUp">
                 <div class="section__topbar">
                     <h2 class="section__title">Our Hotel Rooms</h2>
-                    <p class="font-sm mb-0">Comfortable, affordable rooms for delegates and travellers</p>
+                    <p class="font-sm mb-0">Comfortable rooms, green grounds, and a peaceful stay for delegates and travellers</p>
                 </div>
             </div>
         </div>
@@ -142,7 +142,7 @@
                 <div class="video--spinner__wrapper" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2; width: 80%; max-width: 80%; text-align: center;">
                     <blockquote class="home-quote-block" style="margin: 0; padding: 0; width: 100%; max-width: 100%; border: none; background: transparent;">
                         <p class="home-quote-text" style="margin: 0; font-size: clamp(1.5rem, 3.5vw, 2.5rem); font-weight: 500; line-height: 1.4; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5); font-style: italic; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                            &ldquo;{{ $about?->vision ?? 'Where comfort meets purpose — your ideal venue for workshops and meetings in Rubengera.' }}&rdquo;
+                            &ldquo;{{ $about?->vision ?? 'A quiet, affordable stay among green surroundings — and a hotel whose work helps the Rubengera Presbytery serve the community.' }}&rdquo;
                         </p>
                     </blockquote>
                 </div>

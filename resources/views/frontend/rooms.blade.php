@@ -3,7 +3,7 @@
 @php
     $heroImage = '';
     $heroCaption = 'Hotel Rooms';
-    $heroDescription = 'Comfortable rooms for short and longer stays at Bethel Hotel.';
+    $heroDescription = 'Comfortable rooms in a quiet, green setting — a home away from home in Rubengera.';
     if ($pageHero && !empty($pageHero->background_image)) {
         $heroImage = asset('storage/' . $pageHero->background_image);
         $heroCaption = $pageHero->caption ?? $heroCaption;

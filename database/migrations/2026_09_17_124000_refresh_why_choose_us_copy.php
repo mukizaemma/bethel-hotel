@@ -1,25 +1,17 @@
 <?php
 
-namespace Database\Seeders;
-
 use App\Models\WhyChooseUsItem;
-use Illuminate\Database\Seeder;
+use Illuminate\Database\Migrations\Migration;
 
-class WhyChooseUsItemSeeder extends Seeder
+return new class extends Migration
 {
-    public function run(): void
+    public function up(): void
     {
+        if (! class_exists(WhyChooseUsItem::class)) {
+            return;
+        }
+
         $items = [
-            [
-                'title' => 'Prime Location in Rubengera',
-                'description' => 'Located in Rubengera, Karongi District — easy to reach and close to Lake Kivu, with convenient access for groups travelling from Kigali and across Western Rwanda.',
-                'sort_order' => 1,
-            ],
-            [
-                'title' => 'Ideal for Workshops & Meetings',
-                'description' => 'Fully equipped meeting spaces for trainings, seminars, church gatherings, and corporate events — with flexible layouts and attentive planning support.',
-                'sort_order' => 2,
-            ],
             [
                 'title' => 'Comfortable & Affordable Rooms',
                 'description' => 'Well-kept rooms at practical rates, with bed and breakfast available — a quiet home away from home for delegates and individual travellers.',
@@ -34,11 +26,6 @@ class WhyChooseUsItemSeeder extends Seeder
                 'title' => 'Restaurant & Catering',
                 'description' => 'Bed and breakfast, varied dishes, cooking for events on site, and outside catering — all from the hotel kitchen.',
                 'sort_order' => 5,
-            ],
-            [
-                'title' => 'Professional & Caring Staff',
-                'description' => 'A dedicated team committed to making your workshop, meeting, or stay run smoothly from start to finish.',
-                'sort_order' => 6,
             ],
             [
                 'title' => 'Free Wi‑Fi & Parking',
@@ -64,4 +51,9 @@ class WhyChooseUsItemSeeder extends Seeder
             );
         }
     }
-}
+
+    public function down(): void
+    {
+        WhyChooseUsItem::query()->where('title', 'Community Impact')->delete();
+    }
+};

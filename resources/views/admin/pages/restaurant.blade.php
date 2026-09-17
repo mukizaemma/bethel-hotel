@@ -66,8 +66,9 @@
 
                                     <div class="row">
                                         <div class="mb-3">
-                                            <label for="summernote" class="form-label">Description</label>
-                                            <textarea id="Blogs" rows="5" class="form-control" name="description">{!!$data->description!!}</textarea>
+                            <label for="summernote" class="form-label">Dining page introduction</label>
+                            <textarea id="Blogs" rows="5" class="form-control" name="description">{!!$data->description!!}</textarea>
+                            <small class="text-muted">Shown on the public Dining page next to the photo gallery. Mention bed and breakfast, dishes, events, and catering if you wish.</small>
                                         </div>
                                     </div>
 

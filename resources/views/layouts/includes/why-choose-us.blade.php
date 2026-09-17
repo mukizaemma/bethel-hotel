@@ -3,16 +3,17 @@
 @if(isset($whyChooseUsItems) && $whyChooseUsItems->isNotEmpty())
 @php
     $wcuLayout = $whyChooseUsLayout ?? 'full';
-    $wcuIcons = [
-        'fa-location-dot',
-        'fa-chalkboard-user',
-        'fa-bed',
-        'fa-hands-praying',
-        'fa-utensils',
-        'fa-user-group',
-        'fa-wifi',
-        'fa-shield-heart',
-    ];
+        $wcuIcons = [
+            'fa-location-dot',
+            'fa-chalkboard-user',
+            'fa-bed',
+            'fa-hands-praying',
+            'fa-utensils',
+            'fa-user-group',
+            'fa-wifi',
+            'fa-shield-heart',
+            'fa-heart',
+        ];
 @endphp
 
 @if($wcuLayout === 'meetings')
@@ -29,7 +30,7 @@
                 <p class="site-why-choose__eyebrow">Why stay with us</p>
                 <h2 id="site-why-choose-heading" class="site-why-choose__heading section__title">Why Choose Us</h2>
                 <p class="site-why-choose__lead font-sm">
-                    Practical reasons guests and event organisers pick Bethel Hotel in Rubengera.
+                    Practical reasons guests, workshop organisers, and individual travellers pick Bethel Hotel in Rubengera.
                 </p>
             </header>
 

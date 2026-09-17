@@ -4,7 +4,7 @@
 @php
     $heroImage = '';
     $heroCaption = 'About Us';
-    $heroDescription = 'Discover our story, values, and commitment to excellence';
+    $heroDescription = 'Discover our story, Christian values, and how a stay here supports the Rubengera community';
     
     if ($pageHero && !empty($pageHero->background_image)) {
         $heroImage = asset('storage/' . $pageHero->background_image);
@@ -62,27 +62,30 @@
             </div>
             <div class="col-lg-6 wow fadeInRight">
                     <div class="about__content">
-                    <h2 class="font-xl" style="font-size: clamp(2rem, 4vw, 2.5rem); margin-bottom: 25px; color: #1a1a1a; font-family: 'Gilda Display', serif;">
-                        Welcome To {{ $setting?->company ?? 'Our Hotel' }}
+                    <h2 class="font-xl" style="font-size: clamp(2rem, 4vw, 2.5rem); margin-bottom: 12px; color: #1a1a1a; font-family: 'Gilda Display', serif;">
+                        {{ $about?->title ?: ('Welcome To '.($setting?->company ?? 'Our Hotel')) }}
                     </h2>
+                    @if(filled($about?->subTitle))
+                        <p class="font-sm mb-3" style="color: #0048ff; font-weight: 600;">{{ $about->subTitle }}</p>
+                    @endif
                     <div class="font-sm mt-30" style="font-size: 1.05rem; line-height: 1.9; color: #4a5568;">
-                        {!! $about?->founderDescription ?? 'Bethel Hotel is a 2-star hotel in Rubengera, Karongi — perfectly suited for workshops, seminars, and comfortable stays in Western Rwanda.' !!}
+                        {!! $about?->founderDescription ?? '<p>Bethel Hotel is an affordable, Christian-led hotel in Rubengera, Karongi — a quiet home away from home for workshops, events, and individual travellers, set among green surroundings near Lake Kivu.</p>' !!}
                     </div>
                     @if($about?->mission || $about?->vision)
                     <div class="row g-4 mt-40">
                         @if($about?->mission)
                         <div class="col-md-6">
-                            <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; border-left: 4px solid #228b22;">
+                            <div class="about-value-card" style="border-left: 4px solid #228b22;">
                                 <h5 style="color: #228b22; margin-bottom: 15px; font-weight: 600;">Our Mission</h5>
-                                <p style="color: #666; margin: 0; line-height: 1.7;">{!! Str::words($about?->mission, 25, '...') !!}</p>
+                                <p style="color: #666; margin: 0; line-height: 1.7;">{!! $about->mission !!}</p>
                             </div>
                         </div>
                         @endif
                         @if($about?->vision)
                         <div class="col-md-6">
-                            <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; border-left: 4px solid #0048ff;">
+                            <div class="about-value-card" style="border-left: 4px solid #0048ff;">
                                 <h5 style="color: #0048ff; margin-bottom: 15px; font-weight: 600;">Our Vision</h5>
-                                <p style="color: #666; margin: 0; line-height: 1.7;">{!! Str::words($about?->vision, 25, '...') !!}</p>
+                                <p style="color: #666; margin: 0; line-height: 1.7;">{!! $about->vision !!}</p>
                             </div>
                         </div>
                         @endif
@@ -94,6 +97,26 @@
     </div>
 </div>
 
+
+<!-- Community & values -->
+<div class="rts__section section__padding" style="background: #ffffff;">
+    <div class="container">
+        <div class="about-community-panel wow fadeInUp">
+            <p class="page-feature__eyebrow mb-2">Christian values &amp; community</p>
+            <h2 class="section__title mb-3" style="text-align: left;">A quiet home away from home that gives back</h2>
+            @if(filled($about?->storyDescription))
+                <div class="content-richtext font-sm" style="font-size: 1.05rem; line-height: 1.85; color: #4a5568;">
+                    {!! $about->storyDescription !!}
+                </div>
+            @else
+                <div class="font-sm" style="font-size: 1.05rem; line-height: 1.85; color: #4a5568;">
+                    <p>Bethel Hotel is led by Christian values: welcome, respect, and care for guests whether they come for a workshop, a church gathering, or a restful personal stay. The grounds are green and quiet, with strong internet, and guests can enjoy community visits around Rubengera.</p>
+                    <p class="mb-0">Part of the hotel’s income supports health insurance, education, and development projects through the <strong>Rubengera Presbytery of the Presbyterian Church in Rwanda</strong> (Église Presbytérienne au Rwanda – EPR).</p>
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
 
 <!-- Team Section -->
 <div class="rts__section section__padding" style="background: #ffffff;">

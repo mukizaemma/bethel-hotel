@@ -15,7 +15,7 @@
             <p class="page-feature__eyebrow">Meetings &amp; events</p>
             <h2 class="page-feature__title section__title">{{ $event->title ?? 'Meetings & Events' }}</h2>
             <p class="page-feature__subtitle font-sm mx-auto ms-lg-0">
-                Flexible spaces and attentive support for workshops, seminars, and meetings in Rubengera.
+                Workshops, seminars, church gatherings, and meetings in a calm setting with strong internet, catering, and rooms on site.
             </p>
         </header>
 

@@ -17,7 +17,7 @@
             <p class="home-cta__eyebrow">Get in touch</p>
             <h2 class="home-cta__title section__title">Contact Bethel Hotel</h2>
             <p class="home-cta__lead font-sm">
-                Call, email, or send the form below — we respond to room, workshop, and meeting enquiries from Rubengera and across Rwanda.
+                Call, email, or send the form below — we help with rooms, workshops, dining, and catering from Rubengera.
             </p>
         </header>
 
