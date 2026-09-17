@@ -13080,6 +13080,20 @@ textarea:focus-visible, input:focus-visible {
   font-weight: 600;
 }
 
+@media (min-width: 992px) {
+  .home-rooms-section .home-room-card__head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.55rem;
+  }
+  .home-rooms-section .home-room-card__price {
+    text-align: left;
+  }
+  .home-rooms-section .home-room-card__price-line {
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 767.98px) {
   .home-room-card__head {
     flex-direction: column;
@@ -14736,7 +14750,15 @@ textarea:focus-visible, input:focus-visible {
   background: linear-gradient(135deg, #f4faf5 0%, #eef4ff 100%);
   border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 20px;
-  padding: clamp(1.5rem, 3vw, 2.5rem);
+  padding: clamp(1.15rem, 2.2vw, 1.65rem);
+}
+.dining-community__panel p {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #4a5568;
+}
+.dining-intro .page-gallery-root {
+  height: 100%;
 }
 .dining-intro__copy {
   font-size: 1.02rem;

@@ -68,8 +68,8 @@
 
         @if($rooms->count() > 0)
         <div class="row g-4 g-lg-4 justify-content-center wow fadeInUp" data-wow-delay=".1s">
-            @foreach($rooms->take(4) as $room)
-            <div class="col-12 col-md-6">
+            @foreach($rooms->take(3) as $room)
+            <div class="col-12 col-md-6 col-lg-4">
                 <article class="home-room-card">
                     <a wire:navigate href="{{ route('room', ['slug' => $room->slug]) }}" class="home-room-card__media">
                         <img src="{{ asset('storage/' . ($room->cover_image ?? 'rooms/default.jpg')) }}"

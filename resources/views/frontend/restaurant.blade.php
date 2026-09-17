@@ -35,14 +35,21 @@
 
 <section class="page-feature rts__section section__padding dining-intro">
     <div class="container">
-        <div class="row g-4 g-xl-5 align-items-start">
-            <div class="col-lg-5">
+        <div class="row g-4 g-xl-5 align-items-stretch">
+            <div class="col-lg-5 d-flex flex-column">
                 <header class="page-feature__header mb-3">
                     <p class="page-feature__eyebrow">Restaurant, bar &amp; catering</p>
                     <h2 class="page-feature__title section__title">{{ $restaurant->title ?? 'Dining at Bethel Hotel' }}</h2>
                 </header>
-                <div class="page-feature__prose content-richtext dining-intro__copy">
+                <div class="page-feature__prose content-richtext dining-intro__copy mb-4">
                     {!! $introHtml !!}
+                </div>
+                <div class="dining-community__panel mt-auto">
+                    <p class="page-feature__eyebrow mb-2">Faith, community &amp; a quiet stay</p>
+                    <h2 class="h4 mb-3">A Christian-led hotel that gives back</h2>
+                    <p class="mb-2">Bethel Hotel is an affordable place to stay for events, workshops, and individuals looking for a quiet home away from home. Guests enjoy green surroundings, community visits, and the calm of Rubengera near Lake Kivu.</p>
+                    <p class="mb-3">A share of the hotel’s income supports health insurance, education, and local development projects through the <strong>Rubengera Presbytery of the Presbyterian Church in Rwanda</strong> (Église Presbytérienne au Rwanda – EPR).</p>
+                    <a wire:navigate href="{{ route('about') }}" class="theme-btn btn-style fill d-inline-flex"><span>Our story</span></a>
                 </div>
             </div>
             <div class="col-lg-7">
@@ -125,24 +132,6 @@
     </div>
 </section>
 @endif
-
-<section class="dining-community rts__section section__padding pt-0">
-    <div class="container">
-        <div class="dining-community__panel">
-            <div class="row g-4 align-items-center">
-                <div class="col-lg-8">
-                    <p class="page-feature__eyebrow mb-2">Faith, community &amp; a quiet stay</p>
-                    <h2 class="h3 mb-3">A Christian-led hotel that gives back</h2>
-                    <p class="mb-2">Bethel Hotel is an affordable place to stay for events, workshops, and individuals looking for a quiet home away from home. Guests enjoy green surroundings, community visits, and the calm of Rubengera near Lake Kivu.</p>
-                    <p class="mb-0">A share of the hotel’s income supports health insurance, education, and local development projects through the <strong>Rubengera Presbytery of the Presbyterian Church in Rwanda</strong> (Église Presbytérienne au Rwanda – EPR).</p>
-                </div>
-                <div class="col-lg-4">
-                    <a wire:navigate href="{{ route('about') }}" class="theme-btn btn-style fill d-inline-flex"><span>Our story</span></a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
 @php
     $ctaSetting = $setting ?? \App\Models\Setting::first();
