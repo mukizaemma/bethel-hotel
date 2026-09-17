@@ -24,6 +24,7 @@ use App\Models\Booking;
 use App\Models\BookingTrash;
 use App\Models\MediaImage;
 use App\Services\MediaLibrary;
+use App\Services\ImageOptimizer;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
@@ -668,7 +669,7 @@ class ContentManagementController extends Controller
         return redirect()->back()->with('success', 'Slide deleted successfully');
     }
 
-    // Page Heroes Management (aligned with config/page_heroes.php + main navigation)
+    // Page Heroes Management (only pages linked on the public site)
     public function pageHeroes()
     {
         $definitions = config('page_heroes', []);
@@ -687,6 +688,7 @@ class ContentManagementController extends Controller
 
         $order = array_keys($definitions);
         $pageHeroes = PageHero::query()
+            ->whereIn('page_slug', $order)
             ->get()
             ->sortBy(function ($h) use ($order) {
                 $i = array_search($h->page_slug, $order, true);
@@ -695,19 +697,19 @@ class ContentManagementController extends Controller
             })
             ->values();
 
+        $defaultHero = $pageHeroes->firstWhere('page_slug', 'default');
         $heroPaths = collect($definitions)->map(fn ($m) => $m['path'])->all();
 
-        return view('content-management.page-heroes.index', compact('pageHeroes', 'heroPaths'));
+        return view('content-management.page-heroes.index', compact('pageHeroes', 'heroPaths', 'defaultHero'));
     }
 
     public function updatePageHero(Request $request, $id)
     {
         try {
             $request->validate([
-                'background_image' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+                'background_image' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:10240',
                 'caption' => 'nullable|string|max:255',
                 'description' => 'nullable|string|max:500',
-                // Remove is_active from validation - we'll handle it manually
             ]);
 
             $pageHero = PageHero::findOrFail($id);
@@ -718,52 +720,36 @@ class ContentManagementController extends Controller
             }
 
             if ($request->hasFile('background_image')) {
-                // Delete old image if exists
                 if ($pageHero->background_image) {
                     Storage::disk('public')->delete($pageHero->background_image);
                 }
-
-                // Ensure directory exists
-                if (! Storage::disk('public')->exists('page-heroes')) {
-                    Storage::disk('public')->makeDirectory('page-heroes');
-                }
-
-                // Store new image
-                $imagePath = $request->file('background_image')->store('page-heroes', 'public');
-                $pageHero->background_image = $imagePath;
+                $pageHero->background_image = app(ImageOptimizer::class)
+                    ->store($request->file('background_image'), 'page-heroes');
             }
 
-            // Update other fields - always update even if empty
             $pageHero->caption = $request->input('caption', '');
             $pageHero->description = $request->input('description', '');
-            
-            // Handle checkbox - if not present in request, it's false
-            $pageHero->is_active = $request->has('is_active') && $request->input('is_active') !== null ? true : false;
-            
+            $pageHero->is_active = true;
             $saved = $pageHero->save();
-            
-            // Log for debugging
-            \Log::info('Page Hero Update', [
-                'id' => $pageHero->id,
-                'has_image' => $request->hasFile('background_image'),
-                'image_path' => $pageHero->background_image,
-                'caption' => $pageHero->caption,
-                'saved' => $saved
-            ]);
 
             if ($saved) {
-                return redirect()->back()->with('success', 'Page hero updated successfully');
-            } else {
-                return redirect()->back()->with('error', 'Failed to update page hero. Please try again.');
+                $message = $pageHero->page_slug === 'default'
+                    ? 'Default header image saved. Pages without their own photo will use this one.'
+                    : 'Page header updated successfully.';
+
+                return redirect()->back()->with('success', $message);
             }
+
+            return redirect()->back()->with('error', 'Failed to update page hero. Please try again.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()
                 ->withErrors($e->errors())
                 ->withInput()
                 ->with('error', 'Validation failed. Please check your input.');
         } catch (\Exception $e) {
-            \Log::error('Page Hero Update Error: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+            \Log::error('Page Hero Update Error: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'An error occurred: '.$e->getMessage());
         }
     }
 }

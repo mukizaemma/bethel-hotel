@@ -3,10 +3,19 @@
     $heroCaption = $defaultCaption ?? 'Page';
     $heroDescription = $defaultDescription ?? '';
     $heroImage = '';
-    if ($pageHero && !empty($pageHero->background_image)) {
-        $heroImage = asset('storage/' . $pageHero->background_image);
+    $heroBackground = $pageHero->background_image ?? null;
+    if (! filled($heroBackground)) {
+        $defaultHero = \App\Models\PageHero::defaultHero();
+        if ($defaultHero && $defaultHero->is_active && filled($defaultHero->background_image)) {
+            $heroBackground = $defaultHero->background_image;
+        }
+    }
+    if ($pageHero && filled($heroBackground)) {
+        $heroImage = asset('storage/' . $heroBackground);
         $heroCaption = $pageHero->caption ?: $heroCaption;
         $heroDescription = $pageHero->description ?? $heroDescription;
+    } elseif (filled($heroBackground)) {
+        $heroImage = asset('storage/' . $heroBackground);
     } elseif ($about && $about->image2) {
         if (strpos($about->image2, '/') !== false || strpos($about->image2, 'abouts') === 0) {
             $heroImage = asset('storage/' . $about->image2);

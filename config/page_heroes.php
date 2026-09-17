@@ -1,52 +1,40 @@
 <?php
 
 /**
- * Page hero sections: slug => display name + public URL path (for CMS).
- * Order matches main navigation where possible.
+ * Page hero backgrounds for public pages that are actually linked on the site.
+ * `default` is the shared header image until a page has its own upload.
  */
 return [
+    'default' => [
+        'label' => 'Default header (all pages)',
+        'path' => 'Used on every public page until that page has its own image',
+    ],
     'about' => [
         'label' => 'About Us',
         'path' => '/about-us',
     ],
+    'our-services' => [
+        'label' => 'Our Services',
+        'path' => '/our-services',
+    ],
     'rooms' => [
-        'label' => 'Our Rooms',
+        'label' => 'Rooms',
         'path' => '/our-rooms',
     ],
-    'apartments' => [
-        'label' => 'Our Apartments',
-        'path' => '/our-apartments',
-    ],
-    'facilities' => [
-        'label' => 'Facilities',
-        'path' => '/facilities',
-    ],
     'dining' => [
-        'label' => 'Dining',
+        'label' => 'Bar & Restaurant',
         'path' => '/dining',
     ],
     'meetings-events' => [
         'label' => 'Meetings & Events',
         'path' => '/meetings-events',
     ],
-    'spa-wellness' => [
-        'label' => 'SPA & Wellness',
-        'path' => '/spa-wellness',
-    ],
-    'activities' => [
-        'label' => 'Tour Activities',
-        'path' => '/activities',
-    ],
     'gallery' => [
         'label' => 'Gallery',
         'path' => '/gallery',
     ],
-    'our-team' => [
-        'label' => 'Our Team',
-        'path' => '/our-team',
-    ],
     'updates' => [
-        'label' => 'Updates / Blog',
+        'label' => 'Updates',
         'path' => '/our-updates',
     ],
     'contact' => [
@@ -57,20 +45,12 @@ return [
         'label' => 'Book Now',
         'path' => '/book-now',
     ],
-    'terms' => [
-        'label' => 'Terms & Conditions',
-        'path' => '/terms-and-conditions',
-    ],
-    'promotions' => [
-        'label' => 'Promotions',
-        'path' => '/promotions',
-    ],
     'reviews' => [
         'label' => 'Guest Reviews',
         'path' => '/reviews',
     ],
-    'tours' => [
-        'label' => 'Tours',
-        'path' => '/tours',
+    'terms' => [
+        'label' => 'Terms & Conditions',
+        'path' => '/terms-and-conditions',
     ],
 ];

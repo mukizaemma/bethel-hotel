@@ -118,38 +118,6 @@
     </div>
 </div>
 
-<!-- Team Section -->
-<div class="rts__section section__padding" style="background: #ffffff;">
-    <div class="container">
-        <div class="row position-relative justify-content-center text-center mb-60">
-            <div class="col-lg-6 wow fadeInUp">
-                <div class="section__topbar">
-                    <h2 class="section__title">Our Team</h2>
-                    <p class="font-sm">Meet the dedicated professionals who make your stay memorable</p>
-                </div>
-            </div>
-        </div>
-        <div class="row g-4 justify-content-center">
-            <div class="col-lg-12 text-center">
-                <div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); padding: 60px 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.08);">
-                    <div style="max-width: 700px; margin: 0 auto;">
-                        <div style="width: 120px; height: 120px; background: linear-gradient(135deg, #0048ff 0%, #228b22 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 30px; box-shadow: 0 8px 20px rgba(0, 72, 255, 0.25);">
-                            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M20.59 22C20.59 18.13 16.74 15 12 15C7.26 15 3.41 18.13 3.41 22" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <h3 style="font-size: 1.8rem; margin-bottom: 15px; color: #1a1a1a; font-family: 'Gilda Display', serif;">Our Dedicated Team</h3>
-                        <p style="font-size: 1.05rem; line-height: 1.8; color: #666; margin-bottom: 0;">
-                            Our team of experienced hospitality professionals is committed to providing you with exceptional service and creating unforgettable experiences during your stay. From our front desk staff to our housekeeping team, every member is dedicated to ensuring your comfort and satisfaction.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Map + booking (same layout as home) -->
 <x-booking-cta
     :rooms="$allRooms"
