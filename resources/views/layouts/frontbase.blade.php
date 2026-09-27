@@ -112,6 +112,9 @@
             align-items: center;
             text-align: center;
         }
+        .footer__delivered {
+            margin-top: 0.35rem;
+        }
         /* Pagination: single row, normal-sized arrows, no overlap */
         .gallery-pagination-wrapper .pagination {
             display: inline-flex;
@@ -1162,18 +1165,20 @@
                     <div class="copyright__wrapper" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                         <p class="mb-0">
                             © {{ date('Y') }} {{ $setting?->company }}. All rights reserved.
-                            @if($setting?->footer_delivered_by_enabled && filled(trim((string) ($setting->footer_delivered_by_company ?? ''))))
-                                Delivered by
-                                @php
-                                    $creditUrl = trim((string) ($setting->footer_delivered_by_url ?? ''));
-                                    $creditName = trim((string) $setting->footer_delivered_by_company);
-                                @endphp
-                                @if($creditUrl !== '' && filter_var($creditUrl, FILTER_VALIDATE_URL))
-                                    <a href="{{ $creditUrl }}" target="_blank" rel="noopener noreferrer">{{ $creditName }}</a>.
-                                @else
-                                    {{ $creditName }}.
-                                @endif
-                            @endif
+                        </p>
+                        @php
+                            $creditName = trim((string) ($setting->footer_delivered_by_company ?? ''));
+                            $creditUrl = trim((string) ($setting->footer_delivered_by_url ?? ''));
+                            if ($creditName === '') {
+                                $creditName = 'Ireme Technologies';
+                            }
+                            if ($creditUrl === '' || filter_var($creditUrl, FILTER_VALIDATE_URL) === false) {
+                                $creditUrl = 'https://iremetech.com';
+                            }
+                        @endphp
+                        <p class="footer__delivered mb-0">
+                            Delivered by
+                            <a href="{{ $creditUrl }}" target="_blank" rel="noopener noreferrer">{{ $creditName }}</a>
                         </p>
                     </div>
                 </div>
