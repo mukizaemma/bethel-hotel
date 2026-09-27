@@ -31,7 +31,10 @@
         $brandLogo = filled($setting?->logo)
             ? asset('storage/images') . $setting->logo
             : asset('storage/images/bethel-logo.png');
-        $footerLogo = filled($setting?->donate)
+        $footerFile = filled($setting?->donate)
+            ? public_path('storage/images/' . ltrim((string) $setting->donate, '/'))
+            : null;
+        $footerLogo = ($footerFile && is_file($footerFile))
             ? asset('storage/images') . $setting->donate
             : $brandLogo;
     @endphp
@@ -173,6 +176,17 @@
             width: auto;
             object-fit: contain;
         }
+        .site-footer--lux .footer__logo {
+            display: block;
+            height: 96px;
+            width: auto;
+            max-width: 160px;
+            max-height: 96px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 8px 10px;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+        }
         .main__header {
             background: #ffffff;
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
@@ -242,12 +256,13 @@
             min-height: 100dvh;
             height: auto;
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             justify-content: center;
             box-sizing: border-box;
         }
         .livewire-home-page .banner__slider__image {
             z-index: 0;
+            overflow: hidden;
         }
         .livewire-home-page .banner__area.is__home__one .swiper-slide > .container {
             position: relative;
@@ -259,17 +274,43 @@
             pointer-events: auto;
         }
         .livewire-home-page .banner__slide__content {
-            padding-top: clamp(4rem, 12vh, 9rem);
-            padding-bottom: clamp(4rem, 12vh, 9rem);
+            padding-top: 0;
+            padding-bottom: clamp(4.75rem, 11vh, 7rem);
+            max-width: 46rem;
+            margin-inline: auto;
         }
         .livewire-home-page .banner__slider__image::before {
-            background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.28) 42%, rgba(0, 0, 0, 0.62) 100%);
+            background:
+                linear-gradient(180deg, rgba(8, 18, 32, 0.18) 0%, rgba(8, 18, 32, 0) 38%, rgba(8, 18, 32, 0.18) 62%, rgba(8, 18, 32, 0.62) 100%);
         }
         .livewire-home-page .banner__slide__content h1,
         .livewire-home-page .banner__slide__content .sub__text,
         .livewire-home-page .banner__slide__content p {
             color: #ffffff !important;
-            text-shadow: 0 2px 18px rgba(0, 0, 0, 0.75);
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
+        }
+        .livewire-home-page .banner__slide__content h1 {
+            font-size: clamp(2.05rem, 3.6vw, 3.15rem);
+            line-height: 1.18;
+            letter-spacing: -0.03em;
+            font-weight: 600 !important;
+            max-width: 16em;
+            margin: 0 auto 1.15rem;
+            text-wrap: balance;
+        }
+        .livewire-home-page .banner__slide__content .sub__text {
+            font-size: clamp(1rem, 1.2vw, 1.15rem);
+            line-height: 1.5;
+            max-width: 34rem;
+            margin: 0 auto 1.35rem;
+            color: rgba(255, 255, 255, 0.92) !important;
+            text-wrap: balance;
+        }
+        .livewire-home-page .banner__slide__content .theme-btn {
+            border-radius: 999px;
+            min-width: 8.75rem;
+            padding: 0.85rem 1.7rem;
+            box-shadow: 0 10px 22px rgba(0, 36, 120, 0.28);
         }
         .livewire-home-page .banner__slider .banner__slide__content h1,
         .livewire-home-page .banner__slider .banner__slide__content .sub__text,
@@ -282,7 +323,21 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: center;
+            object-position: center 42%;
+            transform: scale(1.14);
+        }
+        .livewire-home-page .hero-swiper-pagination {
+            bottom: 1.35rem !important;
+        }
+        .livewire-home-page .hero-swiper-pagination .swiper-pagination-bullet {
+            width: 7px;
+            height: 7px;
+            background: #fff;
+            opacity: 0.55;
+        }
+        .livewire-home-page .hero-swiper-pagination .swiper-pagination-bullet-active {
+            opacity: 1;
+            background: #fff;
         }
         /* Custom preloader: logo + animation (overrides template default) */
         .loader-wrapper {
