@@ -82,8 +82,14 @@
                     </div>
                     <div class="mb-2">
                         <label class="form-label" for="attraction_image">Image</label>
-                        <input type="file" class="form-control" id="attraction_image" name="image" accept="image/*">
-                        <div class="form-text">Optional. JPG or PNG, max ~4&nbsp;MB. Replaces existing image when editing.</div>
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'attractionImagePicker',
+                            'multiple' => false,
+                            'existingName' => 'existing_media_id',
+                            'fileName' => 'image',
+                            'fileId' => 'attraction_image',
+                            'pickerHint' => 'Optional. Upload a new photo or choose one from the library. Files over 700 KB are reduced automatically.',
+                        ])
                     </div>
                     <div id="attraction_current_image_wrap" class="mb-0" style="display:none;">
                         <label class="form-label">Current image</label>

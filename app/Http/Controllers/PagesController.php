@@ -10,6 +10,7 @@ use App\Models\Restaurant;
 use App\Models\RestaurantCuisine;
 use App\Models\Restoimage;
 use App\Models\Setting;
+use App\Services\MediaLibrary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -158,7 +159,8 @@ class PagesController extends Controller
             'title' => 'required|string|max:255',
             'max_persons' => 'required|integer|min:1|max:10000',
             'description' => 'nullable|string',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'existing_cover_media_id' => 'nullable|integer|exists:media_images,id',
         ]);
 
         $room = MeetingRoom::findOrFail($id);
@@ -170,15 +172,9 @@ class PagesController extends Controller
         $room->max_persons = (int) $request->input('max_persons');
         $room->description = $request->input('description');
 
-        if ($request->hasFile('cover_image')) {
-            if ($room->image) {
-                $diskPath = 'images/meeting-rooms/covers/'.$room->image;
-                if (Storage::disk('public')->exists($diskPath)) {
-                    Storage::disk('public')->delete($diskPath);
-                }
-            }
-            $path = $request->file('cover_image')->store('public/images/meeting-rooms/covers');
-            $room->image = str_replace('public/images/meeting-rooms/covers/', '', $path);
+        $cover = app(MediaLibrary::class)->legacyFilename($request, 'cover_image', 'existing_cover_media_id', 'images/meeting-rooms/covers');
+        if ($cover) {
+            $room->image = $cover;
         }
 
         $room->save();
@@ -233,18 +229,19 @@ class PagesController extends Controller
     {
         $request->validate([
             'meeting_room_id' => 'required|exists:meeting_rooms,id',
-            'image.*' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'image.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'existing_media_ids' => 'nullable|array',
+            'existing_media_ids.*' => 'integer|exists:media_images,id',
         ]);
 
-        if (! $request->hasFile('image')) {
-            return redirect()->back()->with('error', 'No images were uploaded.');
+        $names = app(MediaLibrary::class)->legacyFilenames($request, 'image', 'existing_media_ids', 'images/meeting-rooms/gallery');
+        if ($names === []) {
+            return redirect()->back()->with('error', 'Upload new images or select existing ones.');
         }
 
         $maxOrder = (int) MeetingRoomImage::where('meeting_room_id', $request->meeting_room_id)->max('sort_order');
 
-        foreach ($request->file('image') as $image) {
-            $path = $image->store('public/images/meeting-rooms/gallery');
-            $fileName = str_replace('public/images/meeting-rooms/gallery/', '', $path);
+        foreach ($names as $fileName) {
             $maxOrder++;
             MeetingRoomImage::create([
                 'meeting_room_id' => (int) $request->meeting_room_id,
@@ -260,7 +257,8 @@ class PagesController extends Controller
     {
         $request->validate([
             'caption' => 'nullable|string|max:500',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'existing_media_id' => 'nullable|integer|exists:media_images,id',
         ]);
 
         $row = MeetingRoomImage::findOrFail($id);
@@ -269,13 +267,9 @@ class PagesController extends Controller
             $row->caption = $request->input('caption');
         }
 
-        if ($request->hasFile('image')) {
-            $diskPath = 'images/meeting-rooms/gallery/'.$row->image;
-            if (Storage::disk('public')->exists($diskPath)) {
-                Storage::disk('public')->delete($diskPath);
-            }
-            $path = $request->file('image')->store('public/images/meeting-rooms/gallery');
-            $row->image = str_replace('public/images/meeting-rooms/gallery/', '', $path);
+        $replacement = app(MediaLibrary::class)->legacyFilename($request, 'image', 'existing_media_id', 'images/meeting-rooms/gallery');
+        if ($replacement) {
+            $row->image = $replacement;
         }
 
         $row->save();
@@ -382,12 +376,16 @@ class PagesController extends Controller
             'restaurant_id' => 'required|exists:restaurants,id',
             'title' => 'required|string|max:255',
             'summary' => 'nullable|string|max:500',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'existing_media_id' => 'nullable|integer|exists:media_images,id',
         ]);
 
+        $fileName = app(MediaLibrary::class)->legacyFilename($request, 'image', 'existing_media_id', 'images/restaurant/cuisines');
+        if (! $fileName) {
+            return redirect()->back()->with('error', 'Upload a new image or select one from the library.');
+        }
+
         $maxOrder = (int) RestaurantCuisine::where('restaurant_id', $request->restaurant_id)->max('sort_order');
-        $path = $request->file('image')->store('public/images/restaurant/cuisines');
-        $fileName = str_replace('public/images/restaurant/cuisines/', '', $path);
 
         RestaurantCuisine::create([
             'restaurant_id' => (int) $request->restaurant_id,
@@ -405,20 +403,17 @@ class PagesController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'summary' => 'nullable|string|max:500',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'existing_media_id' => 'nullable|integer|exists:media_images,id',
         ]);
 
         $row = RestaurantCuisine::findOrFail($id);
         $row->title = $request->input('title');
         $row->summary = $request->input('summary');
 
-        if ($request->hasFile('image')) {
-            $diskPath = 'images/restaurant/cuisines/'.$row->image;
-            if ($row->image && Storage::disk('public')->exists($diskPath)) {
-                Storage::disk('public')->delete($diskPath);
-            }
-            $path = $request->file('image')->store('public/images/restaurant/cuisines');
-            $row->image = str_replace('public/images/restaurant/cuisines/', '', $path);
+        $replacement = app(MediaLibrary::class)->legacyFilename($request, 'image', 'existing_media_id', 'images/restaurant/cuisines');
+        if ($replacement) {
+            $row->image = $replacement;
         }
 
         $row->save();
@@ -472,20 +467,20 @@ class PagesController extends Controller
     public function addRestoImage(Request $request)
     {
         $request->validate([
-            'image.*' => 'image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
+            'image.*' => 'nullable|image|max:10240',
+            'existing_media_ids' => 'nullable|array',
+            'existing_media_ids.*' => 'integer|exists:media_images,id',
             'restaurant_id' => 'required|exists:restaurants,id',
         ]);
 
-        if (! $request->hasFile('image')) {
-            return redirect()->back()->with('error', 'No images were uploaded.');
+        $names = app(MediaLibrary::class)->legacyFilenames($request, 'image', 'existing_media_ids', 'images/restaurant');
+        if ($names === []) {
+            return redirect()->back()->with('error', 'Upload new images or select existing ones.');
         }
 
         $maxOrder = (int) Restoimage::where('restaurant_id', $request->restaurant_id)->max('sort_order');
 
-        foreach ($request->file('image') as $image) {
-            $path = $image->store('public/images/restaurant');
-            $fileName = str_replace('public/images/restaurant/', '', $path);
-
+        foreach ($names as $fileName) {
             $maxOrder++;
             Restoimage::create([
                 'image' => $fileName,
@@ -502,7 +497,8 @@ class PagesController extends Controller
     {
         $request->validate([
             'caption' => 'nullable|string|max:500',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
+            'image' => 'nullable|image|max:10240',
+            'existing_media_id' => 'nullable|integer|exists:media_images,id',
         ]);
 
         $row = Restoimage::findOrFail($id);
@@ -511,14 +507,9 @@ class PagesController extends Controller
             $row->caption = $request->input('caption');
         }
 
-        if ($request->hasFile('image')) {
-            $diskPath = 'images/restaurant/'.$row->image;
-            if (Storage::disk('public')->exists($diskPath)) {
-                Storage::disk('public')->delete($diskPath);
-            }
-            $path = $request->file('image')->store('public/images/restaurant');
-            $fileName = str_replace('public/images/restaurant/', '', $path);
-            $row->image = $fileName;
+        $replacement = app(MediaLibrary::class)->legacyFilename($request, 'image', 'existing_media_id', 'images/restaurant');
+        if ($replacement) {
+            $row->image = $replacement;
         }
 
         $row->save();

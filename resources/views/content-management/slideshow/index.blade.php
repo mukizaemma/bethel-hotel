@@ -6,9 +6,9 @@
     <div class="container-fluid pt-4 px-4">
         <div class="bg-light rounded h-100 p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="mb-0">Slideshow Management</h4>
+                <h4 class="mb-0">Home Slide</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#slideModal" onclick="resetForm()">
-                    <i class="fa fa-plus me-2"></i>Add New Slide
+                    <i class="fa fa-plus me-2"></i>Add home slide
                 </button>
             </div>
 
@@ -28,7 +28,7 @@
                                 </video>
                             @endif
                         @else
-                            <img src="{{ asset('storage/' . ($slide->image ?? 'slides/default.jpg')) }}" class="card-img-top" alt="Slide" style="height: 200px; object-fit: cover;">
+                            <img src="{{ $slide->imageUrl() ?: asset('storage/slides/default.jpg') }}" class="card-img-top" alt="Home slide" style="height: 200px; object-fit: cover;">
                         @endif
                         <div class="card-body">
                             <h5 class="card-title">{{ $slide->heading ?? 'Slide ' . $slide->id }}</h5>
@@ -60,10 +60,10 @@
 
 <!-- Slide Modal -->
 <div class="modal fade" id="slideModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Add New Slide</h5>
+                <h5 class="modal-title">Add home slide</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             @php
@@ -102,10 +102,15 @@
                     <!-- Image Fields -->
                     <div id="imageFields">
                         <div class="mb-3">
-                            <label class="form-label">Image <span class="text-danger">*</span></label>
-                            <input type="file" class="form-control" name="image" id="imageInput" accept="image/*">
-                            <small class="form-text text-muted">Accepted formats: JPG, PNG, GIF (Max: 2MB)</small>
-                            <div class="invalid-feedback">Please select an image.</div>
+                            <label class="form-label">Image</label>
+                            @include('content-management.includes.media-picker', [
+                                'pickerId' => 'homeSlidePicker',
+                                'multiple' => false,
+                                'existingName' => 'existing_media_id',
+                                'fileName' => 'image',
+                                'fileId' => 'imageInput',
+                                'pickerHint' => 'Upload a new photo or choose one already in the library. Files over 700 KB are reduced automatically.',
+                            ])
                         </div>
                     </div>
                     <!-- Video Fields -->
@@ -150,7 +155,7 @@
         form.reset();
         form.action = storeAction;
         document.getElementById('slideFormMethod').value = 'POST';
-        document.querySelector('#slideModal .modal-title').textContent = 'Add New Slide';
+        document.querySelector('#slideModal .modal-title').textContent = 'Add home slide';
         document.getElementById('media_type').value = 'image';
         toggleMediaFields();
     }
@@ -166,12 +171,11 @@
         if (mediaType === 'video') {
             imageFields.style.display = 'none';
             videoFields.style.display = 'block';
-            if (imageInput) imageInput.removeAttribute('required');
         } else {
             imageFields.style.display = 'block';
             videoFields.style.display = 'none';
-            if (imageInput) imageInput.setAttribute('required', 'required');
         }
+        if (imageInput) imageInput.removeAttribute('required');
 
         if (videoUrl) videoUrl.removeAttribute('required');
         if (videoFile) videoFile.removeAttribute('required');
@@ -191,7 +195,7 @@
 
         form.action = updateActionTemplate.replace('__SLIDE_ID__', id);
         methodField.value = 'POST'; // route is POST /update
-        modalTitle.textContent = 'Edit Slide';
+        modalTitle.textContent = 'Edit home slide';
 
         document.getElementById('media_type').value = slide.media_type || 'image';
         document.querySelector('input[name=\"heading\"]').value = slide.heading || '';
@@ -217,7 +221,7 @@
     }
 
     function deleteSlide(id) {
-        if (!confirm('Are you sure you want to delete this slide?')) {
+        if (!confirm('Are you sure you want to delete this home slide?')) {
             return;
         }
         const form = document.getElementById('deleteSlideForm');

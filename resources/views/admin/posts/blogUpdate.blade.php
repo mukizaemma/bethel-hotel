@@ -68,7 +68,13 @@
                                             <label for="image" class="form-label">Change Cover Image</label>
                                             <div class="input-group">
 
-                                                <input type="file" name="image" class="form-control" id="image">
+                                                @include('content-management.includes.media-picker', [
+                                                    'pickerId' => 'blogUpdateCoverPicker',
+                                                    'multiple' => false,
+                                                    'existingName' => 'existing_media_id',
+                                                    'fileName' => 'image',
+                                                    'fileId' => 'image',
+                                                ])
 
                                             </div>
                                         </div>

@@ -103,8 +103,13 @@
                                 <div class="col-lg-6 col-sm-12">
                                         <label>Partner Logo</label>
                                         <label id="projectinput7" class="file center-block">
-                                            <input type="file" id="image" name="image"
-                                                required="">
+                                            @include('content-management.includes.media-picker', [
+                                                'pickerId' => 'partnerLogoPicker',
+                                                'multiple' => false,
+                                                'existingName' => 'existing_media_id',
+                                                'fileName' => 'image',
+                                                'fileId' => 'image',
+                                            ])
                                             <span class="file-custom"></span>
                                         </label>
                                 </div>

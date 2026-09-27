@@ -254,8 +254,10 @@
                 <div class="blog__card" style="background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
                     <div style="height: 250px; overflow: hidden;">
                         <a wire:navigate href="{{ route('update', ['slug' => $blog->slug]) }}">
-                            <img src="{{ asset('storage/images/blogs/' . ($blog->image ?? 'default.jpg')) }}" 
-                                 alt="{{ $blog->title }}" 
+                            <img src="{{ asset('storage/images/blogs/' . ($blog->image ?? 'default.jpg')) }}"
+                                 alt="{{ $blog->title }}"
+                                 loading="lazy"
+                                 decoding="async"
                                  style="width: 100%; height: 100%; object-fit: cover;">
                         </a>
                     </div>
@@ -291,6 +293,6 @@
 @endif
 <!-- Updates End -->
 
-<x-booking-cta :rooms="$rooms" heading-id="home-cta-heading" :show-children-field="true" />
+<x-booking-cta :rooms="$rooms" :setting="$setting" heading-id="home-cta-heading" :show-children-field="true" />
 <!-- Call to Action End -->
 </div>

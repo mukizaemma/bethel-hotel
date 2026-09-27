@@ -82,14 +82,26 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Cover Image <span class="text-danger">*</span></label>
-                        <input type="file" class="form-control" id="service_cover_image" name="cover_image" accept="image/*">
-                        <small class="text-muted">Required on create. Optional when editing.</small>
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'serviceCoverPicker',
+                            'multiple' => false,
+                            'existingName' => 'existing_cover_media_id',
+                            'fileName' => 'cover_image',
+                            'fileId' => 'service_cover_image',
+                            'pickerHint' => 'Required on create. Upload a new cover or choose one from the library. Files over 700 KB are reduced automatically.',
+                        ])
                         <div class="mt-2" id="service_cover_preview" style="display:none;"></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Gallery Images (Multiple)</label>
-                        <input type="file" class="form-control" id="service_images" name="images[]" multiple accept="image/*">
-                        <small class="text-muted">Optional - You can select multiple images</small>
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'serviceGalleryPicker',
+                            'multiple' => true,
+                            'existingName' => 'existing_media_ids[]',
+                            'fileName' => 'images[]',
+                            'fileId' => 'service_images',
+                            'pickerHint' => 'Optional. Upload or select several images. Files over 700 KB are reduced automatically.',
+                        ])
                         <div class="mt-3" id="existing_service_images"></div>
                     </div>
                     <div class="mb-3">
@@ -152,7 +164,8 @@ function resetForm() {
     document.getElementById('serviceFormErrors').innerHTML = '';
     document.getElementById('existing_service_images').innerHTML = '';
     document.getElementById('service_cover_preview').style.display = 'none';
-    document.getElementById('service_cover_image').required = true;
+    const coverInput = document.getElementById('service_cover_image');
+    if (coverInput) coverInput.required = false;
     // Remove invalid classes
     form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
     if ($('#service_description').length && $('#service_description').summernote) {
@@ -174,7 +187,8 @@ function editService(id) {
             }
             document.getElementById('service_status').value = data.status;
             document.getElementById('serviceModalTitle').textContent = 'Edit Service';
-            document.getElementById('service_cover_image').required = false;
+            const coverInput = document.getElementById('service_cover_image');
+            if (coverInput) coverInput.required = false;
             renderCoverPreview(data.cover_image, data.title);
             renderExistingGalleryImages(data.images || []);
             new bootstrap.Modal(document.getElementById('serviceModal')).show();

@@ -3,13 +3,18 @@
 namespace App\Providers;
 
 use App\Models\About;
+use App\Models\Blog;
 use App\Models\Facility;
+use App\Models\HotelContact;
 use App\Models\Room;
 use App\Models\Setting;
+use App\Models\Slide;
 use App\Models\WhyChooseUsItem;
+use App\Services\PublicWebsiteData;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Pagination\Paginator;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,16 +34,19 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive();
 
-        // Share rooms and facilities globally for navigation
+        Livewire::useScriptTagAttributes(['defer' => true]);
+
         View::composer('layouts.frontbase', function ($view) {
-            $view->with('rooms', Room::where('status', 'Active')->oldest()->get());
-            $view->with('facilities', Facility::where('status', 'Active')->oldest()->get());
-            $view->with('setting', Setting::first());
-            $view->with('about', About::first());
-            $view->with(
-                'whyChooseUsItems',
-                WhyChooseUsItem::query()->orderBy('sort_order')->orderBy('id')->get()
-            );
+            $view->with(PublicWebsiteData::layout());
         });
+
+        $forgetPublicCache = static function () {
+            PublicWebsiteData::forgetCaches();
+        };
+
+        foreach ([Room::class, Facility::class, Setting::class, About::class, WhyChooseUsItem::class, Slide::class, Blog::class, HotelContact::class] as $model) {
+            $model::saved($forgetPublicCache);
+            $model::deleted($forgetPublicCache);
+        }
     }
 }

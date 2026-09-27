@@ -205,7 +205,7 @@
             <li class="mb-1"><strong>Activities</strong> — tour &amp; activity content.</li>
             <li class="mb-1"><strong>Attractions</strong> — nearby points of interest.</li>
             <li class="mb-1"><strong>Gallery</strong> — gallery images.</li>
-            <li class="mb-1"><strong>Slideshow</strong> — home (and related) carousel slides.</li>
+            <li class="mb-1"><strong>Home Slide</strong> — the photos and captions on the homepage slideshow.</li>
             <li class="mb-1"><strong>Page heroes</strong> — hero banners for major sections.</li>
             <li class="mb-1"><strong>System Users</strong> — <em>Super Admin only</em> — user accounts.</li>
             <li class="mb-1"><strong>Settings</strong> — opens the full settings area (logo, contacts, booking &amp; review links, about text, keywords, etc.).</li>

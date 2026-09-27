@@ -80,6 +80,7 @@
                 </div>
                 <div class="modal-body">
                     <input type="file" name="images[]" class="form-control" accept="image/*" multiple required>
+                    <small class="text-muted d-block mt-1">You can select several images. Files over 700 KB are reduced automatically; smaller files are kept as uploaded.</small>
                     <small class="text-muted d-block mt-2">Images larger than 700 KB are resized/compressed. Smaller images are not changed. Matching files already in the library are reused instead of duplicated.</small>
                 </div>
                 <div class="modal-footer">

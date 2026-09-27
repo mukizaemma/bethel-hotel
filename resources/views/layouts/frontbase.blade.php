@@ -15,6 +15,10 @@
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    @if(!empty($lcpImage))
+        <link rel="preload" as="image" href="{{ $lcpImage }}" fetchpriority="high">
+    @endif
     <!-- for open graph social media -->
     <meta property="og:title" content="{{$setting?->company ?? ''}}">
     <meta property="og:description" content="{{$setting?->company ?? ''}}">
@@ -49,19 +53,21 @@
         </script>
     @endif
 
-    <!-- google fonts - Uniform, readable fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- icon font from flaticon -->
+    <!-- Local CSS stays render-blocking so the first paint is styled. Fonts and icons load without holding the page. -->
     <link rel="stylesheet" href="assets/fonts/flaticon_bokinn.css">
-    <!-- all plugin css -->
     <link rel="stylesheet" href="assets/css/plugins.min.css">
-    <!-- main style custom css -->
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/bethel-brand.css">
-    <!-- Swiper CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    @php
+        $webfontHref = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;700&display=swap';
+        $iconFontHref = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+    @endphp
+    <link rel="stylesheet" href="{{ $webfontHref }}" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="{{ $iconFontHref }}" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="{{ $webfontHref }}">
+        <link rel="stylesheet" href="{{ $iconFontHref }}">
+    </noscript>
 
     @livewireStyles
     
@@ -256,6 +262,21 @@
             padding-top: clamp(4rem, 12vh, 9rem);
             padding-bottom: clamp(4rem, 12vh, 9rem);
         }
+        .livewire-home-page .banner__slider__image::before {
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.28) 42%, rgba(0, 0, 0, 0.62) 100%);
+        }
+        .livewire-home-page .banner__slide__content h1,
+        .livewire-home-page .banner__slide__content .sub__text,
+        .livewire-home-page .banner__slide__content p {
+            color: #ffffff !important;
+            text-shadow: 0 2px 18px rgba(0, 0, 0, 0.75);
+        }
+        .livewire-home-page .banner__slider .banner__slide__content h1,
+        .livewire-home-page .banner__slider .banner__slide__content .sub__text,
+        .livewire-home-page .banner__slider .banner__slide__content .theme-btn {
+            animation: none !important;
+            opacity: 1 !important;
+        }
         .livewire-home-page .banner__slider__image img,
         .livewire-home-page .banner__slider__image video {
             width: 100%;
@@ -323,13 +344,33 @@
             0%, 100% { transform: scale(0.95); opacity: 0.4; }
             50% { transform: scale(1.08); opacity: 0.15; }
         }
-        .loaded .loader-wrapper {
+        .loaded .loader-wrapper,
+        html.loaded .loader-wrapper {
             opacity: 0;
             visibility: hidden;
+            pointer-events: none;
             transform: none;
-            transition: opacity 0.5s ease-out 0.15s, visibility 0.5s 0.15s;
+            transition: none;
         }
     </style>
+    <script>
+        (function () {
+            function revealPage() {
+                document.documentElement.classList.add('loaded');
+                if (document.body) {
+                    document.body.classList.add('loaded');
+                }
+                try { sessionStorage.setItem('bethel-booted', '1'); } catch (e) {}
+            }
+            try {
+                if (sessionStorage.getItem('bethel-booted') === '1') {
+                    document.documentElement.classList.add('loaded');
+                }
+            } catch (e) {}
+            document.addEventListener('DOMContentLoaded', revealPage);
+            setTimeout(revealPage, 1500);
+        })();
+    </script>
 
 </head>
 
@@ -342,6 +383,9 @@
                 if (swalOpts && typeof swalOpts === 'object') {
                     if (!swalOpts.confirmButtonColor) {
                         swalOpts.confirmButtonColor = (swalOpts.icon === 'error') ? '#d33' : '#0048ff';
+                    }
+                    if (swalOpts.whatsappUrl) {
+                        window.open(swalOpts.whatsappUrl, '_blank', 'noopener,noreferrer');
                     }
                     Swal.fire(swalOpts);
                 }
@@ -1099,47 +1143,20 @@
     <!-- Preloader end -->
 
 
-    <!-- plugin js -->
-    <script src="assets/js/plugins.min.js"></script>
-    <script src="assets/js/gdpr.js"></script>
-    <!-- custom js -->
-    <script src="assets/js/main.js"></script>
-    <!-- Swiper JS -->
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <!-- plugin js (Swiper is already bundled in plugins.min.js) -->
+    <script src="assets/js/plugins.min.js" defer></script>
+    <script src="assets/js/gdpr.js" defer></script>
+    <script src="assets/js/main.js" defer></script>
 
     <script>
         window.showCookiePopup = {{ $showCookiePopup ?? true ? 'true' : 'false' }};
     </script>
 
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @if(session('swal') || session('success') || session('error'))
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    @endif
 
     <script>
-(function() {
-    var applicationForm = document.getElementById('application-form');
-    if (applicationForm) {
-        applicationForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            var recaptchaResponse = grecaptcha.getResponse();
-            if (!recaptchaResponse) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'reCAPTCHA',
-                        text: 'Please confirm you are not a robot.',
-                        confirmButtonColor: '#0048ff'
-                    });
-                } else {
-                    alert("Please confirm you are not a robot.");
-                }
-                return false;
-            }
-            this.submit();
-        });
-    }
-})();
-
     function initBookingDatePickers() {
         var checkIn = document.querySelector('#check__in');
         var checkOut = document.querySelector('#check__out');
@@ -1150,7 +1167,7 @@
             flatpickr('#check__out', { minDate: 'today', dateFormat: 'd M Y' });
         }
     }
-    initBookingDatePickers();
+    document.addEventListener('DOMContentLoaded', initBookingDatePickers);
     document.addEventListener('livewire:navigated', initBookingDatePickers);
 
     function initWhyChooseJarallax() {
@@ -1186,6 +1203,27 @@
         var slideCount = el.querySelectorAll('.swiper-slide').length;
         if (slideCount === 0) return;
 
+        function activateHeroMedia(swiper) {
+            Array.prototype.forEach.call(swiper.slides, function (slide, index) {
+                var active = index === swiper.activeIndex;
+                slide.querySelectorAll('iframe[data-src]').forEach(function (frame) {
+                    if (active && !frame.getAttribute('src')) {
+                        frame.setAttribute('src', frame.getAttribute('data-src'));
+                    }
+                });
+                slide.querySelectorAll('video').forEach(function (video) {
+                    if (active) {
+                        var playAttempt = video.play();
+                        if (playAttempt && typeof playAttempt.catch === 'function') {
+                            playAttempt.catch(function () {});
+                        }
+                    } else {
+                        video.pause();
+                    }
+                });
+            });
+        }
+
         new Swiper(el, {
             slidesPerView: 1,
             loop: slideCount > 1,
@@ -1205,6 +1243,10 @@
                 el: el.querySelector('.hero-swiper-pagination'),
                 clickable: true,
                 dynamicBullets: true,
+            },
+            on: {
+                init: function () { activateHeroMedia(this); },
+                slideChange: function () { activateHeroMedia(this); },
             },
         });
     }

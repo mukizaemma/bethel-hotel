@@ -508,9 +508,14 @@
         }
       },
       preloader: function (e){
-        window.addEventListener('load',function(){
-          document.querySelector('body').classList.add("loaded")  
-        });     
+        var reveal = function () {
+          document.body.classList.add('loaded');
+        };
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', reveal);
+        } else {
+          reveal();
+        }
       },
 
       date: function (e) {

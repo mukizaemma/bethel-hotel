@@ -68,11 +68,23 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Cover Image</label>
-                        <input type="file" class="form-control" id="activity_cover_image" name="cover_image" accept="image/*">
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'activityCoverPicker',
+                            'multiple' => false,
+                            'existingName' => 'existing_cover_media_id',
+                            'fileName' => 'cover_image',
+                            'fileId' => 'activity_cover_image',
+                        ])
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Gallery Images (Multiple)</label>
-                        <input type="file" class="form-control" id="activity_images" name="images[]" multiple accept="image/*">
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'activityGalleryPicker',
+                            'multiple' => true,
+                            'existingName' => 'existing_media_ids[]',
+                            'fileName' => 'images[]',
+                            'fileId' => 'activity_images',
+                        ])
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Status *</label>

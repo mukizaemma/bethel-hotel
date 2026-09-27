@@ -55,12 +55,7 @@ class BlogsController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $fileName = '';
-        if($request->hasFile('image')){
-            $file = $request->file('image');
-            $path = $file->store('public/images/blogs');
-            $fileName = basename($path);
-        }
+        $fileName = app(\App\Services\MediaLibrary::class)->legacyFilename($request, 'image', 'existing_media_id', 'images/blogs') ?? '';
     
         $slug = Str::of($request->input('title'))->slug();
     
@@ -100,13 +95,9 @@ public function update(Request $request, $id)
     $post = Blog::findOrFail($id);
 
     // Check and update image if changed
-    if ($request->hasFile('image')) {
-        if ($post->image && Storage::exists('public/images/blogs/' . $post->image)) {
-            Storage::delete('public/images/blogs/' . $post->image);
-        }
-
-        $path = $request->file('image')->store('public/images/blogs');
-        $post->image = basename($path);
+    $replacement = app(\App\Services\MediaLibrary::class)->legacyFilename($request, 'image', 'existing_media_id', 'images/blogs');
+    if ($replacement) {
+        $post->image = $replacement;
     }
 
     // Update only if values changed

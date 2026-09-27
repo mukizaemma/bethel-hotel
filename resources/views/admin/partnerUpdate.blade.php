@@ -73,7 +73,13 @@
                                             <label for="image" class="form-label">Change logo Image<br> <span style="color: red">(This image should be resized to 170X58 pixels)</span></label>
                                             <div class="input-group">
 
-                                                <input type="file" name="image" class="form-control" id="image">
+                                                @include('content-management.includes.media-picker', [
+                                                    'pickerId' => 'partnerUpdateLogoPicker',
+                                                    'multiple' => false,
+                                                    'existingName' => 'existing_media_id',
+                                                    'fileName' => 'image',
+                                                    'fileId' => 'image',
+                                                ])
 
                                             </div>
                                         </div>

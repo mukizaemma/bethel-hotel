@@ -181,36 +181,18 @@ class ContentManagementController extends Controller
         $about->fill($request->only(['title', 'subTitle', 'founderDescription', 'mission', 'vision', 'storyDescription', 'backImageText']));
         $about->user_id = auth()->id();
         
-        // Handle image uploads
-        if ($request->hasFile('image1')) {
-            if ($about->image1) {
-                \Storage::disk('public')->delete($about->image1);
+        $mediaLibrary = app(MediaLibrary::class);
+        foreach ([
+            'image1' => 'existing_image1_id',
+            'image2' => 'existing_image2_id',
+            'image3' => 'existing_image3_id',
+            'image4' => 'existing_image4_id',
+            'storyImage' => 'existing_story_image_id',
+        ] as $fileKey => $existingKey) {
+            $path = $mediaLibrary->pathFromRequest($request, $fileKey, $existingKey, 'abouts');
+            if ($path) {
+                $about->{$fileKey} = $path;
             }
-            $about->image1 = $request->file('image1')->store('abouts', 'public');
-        }
-        if ($request->hasFile('image2')) {
-            if ($about->image2) {
-                \Storage::disk('public')->delete($about->image2);
-            }
-            $about->image2 = $request->file('image2')->store('abouts', 'public');
-        }
-        if ($request->hasFile('image3')) {
-            if ($about->image3) {
-                \Storage::disk('public')->delete($about->image3);
-            }
-            $about->image3 = $request->file('image3')->store('abouts', 'public');
-        }
-        if ($request->hasFile('image4')) {
-            if ($about->image4) {
-                \Storage::disk('public')->delete($about->image4);
-            }
-            $about->image4 = $request->file('image4')->store('abouts', 'public');
-        }
-        if ($request->hasFile('storyImage')) {
-            if ($about->storyImage) {
-                \Storage::disk('public')->delete($about->storyImage);
-            }
-            $about->storyImage = $request->file('storyImage')->store('abouts', 'public');
         }
         
         $about->save();
@@ -265,11 +247,9 @@ class ContentManagementController extends Controller
         $seo->fill($request->only(['page_name', 'meta_title', 'meta_description', 'meta_keywords', 'og_title', 'og_description']));
         $seo->updated_by = auth()->id();
         
-        if ($request->hasFile('og_image')) {
-            if ($seo->og_image) {
-                \Storage::disk('public')->delete($seo->og_image);
-            }
-            $seo->og_image = $request->file('og_image')->store('seo', 'public');
+        $ogImage = app(MediaLibrary::class)->pathFromRequest($request, 'og_image', 'existing_og_media_id', 'seo');
+        if ($ogImage) {
+            $seo->og_image = $ogImage;
         }
         
         $seo->save();
@@ -470,8 +450,9 @@ class ContentManagementController extends Controller
         if ($request->youtube_link) {
             $gallery->youtube_link = $request->youtube_link;
         }
-        if ($request->hasFile('thumbnail')) {
-            $gallery->thumbnail = $request->file('thumbnail')->store('gallery', 'public');
+        $thumbnail = $mediaLibrary->pathFromRequest($request, 'thumbnail', 'existing_thumbnail_id', 'gallery');
+        if ($thumbnail) {
+            $gallery->thumbnail = $thumbnail;
         }
 
         $gallery->sort_order = ((int) Gallery::query()->max('sort_order')) + 1;
@@ -543,7 +524,8 @@ class ContentManagementController extends Controller
         ];
 
         if ($request->media_type === 'image') {
-            $rules['image'] = 'required|image|max:2048';
+            $rules['image'] = 'nullable|image|max:10240';
+            $rules['existing_media_id'] = 'nullable|integer|exists:media_images,id';
         } else {
             // Video validation - at least one must be provided
             $rules['video_url'] = 'nullable|url|max:500';
@@ -552,11 +534,17 @@ class ContentManagementController extends Controller
 
         $request->validate($rules);
 
+        $mediaLibrary = app(MediaLibrary::class);
+
         // Additional validation for video: at least video_url or video_file must be provided
         if ($request->media_type === 'video') {
             if (empty($request->video_url) && !$request->hasFile('video_file')) {
                 return redirect()->back()->with('error', 'Please provide either a video URL or upload a video file.');
             }
+        }
+
+        if ($request->media_type === 'image' && ! $request->hasFile('image') && ! $request->filled('existing_media_id')) {
+            return redirect()->back()->with('error', 'Upload a new image or select one from the library.');
         }
 
         $slide = new Slide();
@@ -567,8 +555,9 @@ class ContentManagementController extends Controller
         $slide->media_type = $request->media_type;
         
         if ($request->media_type === 'image') {
-            if ($request->hasFile('image')) {
-                $slide->image = $request->file('image')->store('slides', 'public');
+            $image = $mediaLibrary->pathFromRequest($request, 'image', 'existing_media_id', 'slides');
+            if ($image) {
+                $slide->image = $image;
             }
         } else {
             // Video mode - prioritize URL over file
@@ -581,7 +570,7 @@ class ContentManagementController extends Controller
         
         $slide->save();
 
-        return redirect()->back()->with('success', 'Slide added successfully');
+        return redirect()->back()->with('success', 'Home slide added successfully');
     }
 
     public function updateSlide(Request $request, Slide $slide)
@@ -595,13 +584,16 @@ class ContentManagementController extends Controller
         ];
 
         if ($request->media_type === 'image') {
-            $rules['image'] = 'nullable|image|max:2048';
+            $rules['image'] = 'nullable|image|max:10240';
+            $rules['existing_media_id'] = 'nullable|integer|exists:media_images,id';
         } else {
             $rules['video_url'] = 'nullable|url|max:500';
             $rules['video_file'] = 'nullable|mimes:mp4,webm,ogg|max:10240';
         }
 
         $request->validate($rules);
+
+        $mediaLibrary = app(MediaLibrary::class);
 
         if ($request->media_type === 'video' && empty($request->video_url) && ! $request->hasFile('video_file')) {
             return redirect()->back()->with('error', 'Please provide either a video URL or upload a video file.');
@@ -621,11 +613,9 @@ class ContentManagementController extends Controller
             $slide->video_url = null;
             $slide->video_file = null;
 
-            if ($request->hasFile('image')) {
-                if ($slide->image) {
-                    Storage::disk('public')->delete($slide->image);
-                }
-                $slide->image = $request->file('image')->store('slides', 'public');
+            $image = $mediaLibrary->pathFromRequest($request, 'image', 'existing_media_id', 'slides');
+            if ($image) {
+                $slide->image = $image;
             }
         } else {
             // Clear any previous image
@@ -651,7 +641,7 @@ class ContentManagementController extends Controller
 
         $slide->save();
 
-        return redirect()->back()->with('success', 'Slide updated successfully');
+        return redirect()->back()->with('success', 'Home slide updated successfully');
     }
 
     public function deleteSlide(Slide $slide)
@@ -665,7 +655,7 @@ class ContentManagementController extends Controller
 
         $slide->delete();
 
-        return redirect()->back()->with('success', 'Slide deleted successfully');
+        return redirect()->back()->with('success', 'Home slide deleted successfully');
     }
 
     // Page Heroes Management (only pages linked on the public site)

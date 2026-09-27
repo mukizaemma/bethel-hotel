@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attraction;
+use App\Services\MediaLibrary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -20,14 +21,17 @@ class AttractionController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|max:4096',
+            'image' => 'nullable|image|max:10240',
+            'existing_media_id' => 'nullable|integer|exists:media_images,id',
         ]);
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('attractions', 'public');
+        $image = app(MediaLibrary::class)->pathFromRequest($request, 'image', 'existing_media_id', 'attractions');
+        if ($image) {
+            $data['image'] = $image;
         } else {
             unset($data['image']);
         }
+        unset($data['existing_media_id']);
 
         Attraction::create($data);
 
@@ -46,19 +50,19 @@ class AttractionController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|max:4096',
+            'image' => 'nullable|image|max:10240',
+            'existing_media_id' => 'nullable|integer|exists:media_images,id',
         ]);
 
         $attraction = Attraction::findOrFail($id);
 
-        if ($request->hasFile('image')) {
-            if ($attraction->image) {
-                Storage::disk('public')->delete($attraction->image);
-            }
-            $data['image'] = $request->file('image')->store('attractions', 'public');
+        $image = app(MediaLibrary::class)->pathFromRequest($request, 'image', 'existing_media_id', 'attractions');
+        if ($image) {
+            $data['image'] = $image;
         } else {
             unset($data['image']);
         }
+        unset($data['existing_media_id']);
 
         $attraction->update($data);
 

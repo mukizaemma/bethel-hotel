@@ -190,14 +190,24 @@
                                         <div class="mb-2">
                                             <img src="{{ asset('storage/images') . $data->logo }}" alt="Header logo" class="img-thumbnail" style="max-height: 80px;">
                                         </div>
-                                        <input type="file" class="form-control" name="logo" accept="image/*">
+                                        @include('content-management.includes.media-picker', [
+                                            'pickerId' => 'headerLogoPicker',
+                                            'multiple' => false,
+                                            'existingName' => 'existing_logo_id',
+                                            'fileName' => 'logo',
+                                        ])
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Footer logo</label>
                                         <div class="mb-2">
                                             <img src="{{ asset('storage/images') . $data->donate }}" alt="Footer logo" class="img-thumbnail" style="max-height: 80px;">
                                         </div>
-                                        <input type="file" class="form-control" name="donate" accept="image/*">
+                                        @include('content-management.includes.media-picker', [
+                                            'pickerId' => 'footerLogoPicker',
+                                            'multiple' => false,
+                                            'existingName' => 'existing_donate_id',
+                                            'fileName' => 'donate',
+                                        ])
                                     </div>
                                     <div class="col-12 col-md-6">
                                         <label for="star_rating" class="form-label">Star rating (footer)</label>
@@ -402,14 +412,24 @@
                                         @if($about && $about->image1)
                                             <div class="mb-2"><img src="{{ asset('storage/' . $about->image1) }}" alt="" class="img-thumbnail" style="max-height: 60px;"></div>
                                         @endif
-                                        <input type="file" class="form-control" name="image1" accept="image/*">
+                                        @include('content-management.includes.media-picker', [
+                                            'pickerId' => 'settingsAboutImage1',
+                                            'multiple' => false,
+                                            'existingName' => 'existing_image1_id',
+                                            'fileName' => 'image1',
+                                        ])
                                     </div>
                                     <div class="col-md-6 col-lg-3">
                                         <label class="form-label">Home middle image</label>
                                         @if($about && $about->image2)
                                             <div class="mb-2"><img src="{{ asset('storage/' . $about->image2) }}" alt="" class="img-thumbnail" style="max-height: 60px;"></div>
                                         @endif
-                                        <input type="file" class="form-control" name="image2" accept="image/*">
+                                        @include('content-management.includes.media-picker', [
+                                            'pickerId' => 'settingsAboutImage2',
+                                            'multiple' => false,
+                                            'existingName' => 'existing_image2_id',
+                                            'fileName' => 'image2',
+                                        ])
                                     </div>
                                 </div>
                             </fieldset>

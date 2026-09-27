@@ -145,7 +145,12 @@
                                                             <input type="text" name="title" value="{{ old('title', $cuisine->title) }}" class="form-control form-control-sm" required placeholder="Title">
                                                             <input type="text" name="summary" value="{{ old('summary', $cuisine->summary) }}" class="form-control form-control-sm" placeholder="Optional short line (e.g. Classic sauces &amp; pastries)">
                                                             <div class="input-group input-group-sm">
-                                                                <input type="file" name="image" class="form-control form-control-sm" accept="image/*">
+                                                                @include('content-management.includes.media-picker', [
+                                                                    'pickerId' => 'cuisinePicker'.$cuisine->id,
+                                                                    'multiple' => false,
+                                                                    'existingName' => 'existing_media_id',
+                                                                    'fileName' => 'image',
+                                                                ])
                                                                 <button type="submit" class="btn btn-sm btn-primary">Save</button>
                                                             </div>
                                                         </form>
@@ -269,7 +274,12 @@
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Image <span class="text-danger">*</span></label>
-                        <input type="file" name="image" class="form-control" accept="image/*" required>
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'newCuisinePicker',
+                            'multiple' => false,
+                            'existingName' => 'existing_media_id',
+                            'fileName' => 'image',
+                        ])
                         <small class="text-muted">Shown as the card photo on the Dining page.</small>
                     </div>
                 </div>
@@ -303,7 +313,14 @@
                             <label for="image" class="form-label">Upload Images</label>
                             <div class="input-group">
                                 <input type="hidden" name="restaurant_id" value="{{ $data->id }}">
-                                <input type="file" name="image[]" class="form-control" id="image" multiple>
+                                @include('content-management.includes.media-picker', [
+                                    'pickerId' => 'restoGalleryPicker',
+                                    'multiple' => true,
+                                    'existingName' => 'existing_media_ids[]',
+                                    'fileName' => 'image[]',
+                                    'fileId' => 'image',
+                                    'pickerHint' => 'Upload one or more photos, or select several from the library. Files over 700 KB are reduced automatically.',
+                                ])
                             </div>
                             <small class="text-muted">You can upload one or multiple images.</small>
                         </div>
@@ -359,7 +376,12 @@
                 @csrf
                 <div class="modal-body">
                     <label class="form-label">New image</label>
-                    <input type="file" name="image" class="form-control" accept="image/*" required>
+                    @include('content-management.includes.media-picker', [
+                        'pickerId' => 'replaceRestoImagePicker',
+                        'multiple' => false,
+                        'existingName' => 'existing_media_id',
+                        'fileName' => 'image',
+                    ])
                     <small class="text-muted d-block mt-2">Caption is unchanged unless you edit it in the table.</small>
                 </div>
                 <div class="modal-footer">

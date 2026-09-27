@@ -144,7 +144,12 @@
                                                             <img src="{{ asset('storage/images/meeting-rooms/covers/' . $room->image) }}" alt="" class="rounded" style="width: 120px; height: 80px; object-fit: cover;">
                                                         </div>
                                                     @endif
-                                                    <input type="file" name="cover_image" class="form-control" accept="image/*">
+                                                    @include('content-management.includes.media-picker', [
+                                                        'pickerId' => 'meetingCover'.$room->id,
+                                                        'multiple' => false,
+                                                        'existingName' => 'existing_cover_media_id',
+                                                        'fileName' => 'cover_image',
+                                                    ])
                                                     <small class="text-muted">Optional — main photo for this room on the public site.</small>
                                                 </div>
                                                 <div class="col-12">
@@ -225,7 +230,13 @@
                                                     <div class="modal-body">
                                                         <input type="hidden" name="meeting_room_id" value="{{ $room->id }}">
                                                         <label class="form-label">Images</label>
-                                                        <input type="file" name="image[]" class="form-control" multiple accept="image/*" required>
+                                                        @include('content-management.includes.media-picker', [
+                                                            'pickerId' => 'meetingGallery'.$room->id,
+                                                            'multiple' => true,
+                                                            'existingName' => 'existing_media_ids[]',
+                                                            'fileName' => 'image[]',
+                                                            'pickerHint' => 'Upload or select several images. Files over 700 KB are reduced automatically.',
+                                                        ])
                                                     </div>
                                                     <div class="modal-footer">
                                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -309,7 +320,12 @@
                         @csrf
                         <div class="modal-body">
                             <label class="form-label">New image</label>
-                            <input type="file" name="image" class="form-control" accept="image/*" required>
+                            @include('content-management.includes.media-picker', [
+                                'pickerId' => 'replaceMeetingImagePicker',
+                                'multiple' => false,
+                                'existingName' => 'existing_media_id',
+                                'fileName' => 'image',
+                            ])
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

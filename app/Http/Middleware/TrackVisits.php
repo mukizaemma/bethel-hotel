@@ -13,10 +13,16 @@ class TrackVisits
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $response = $next($request);
+        return $next($request);
+    }
 
+    /**
+     * Write the visit after the response is sent so logging does not delay the page.
+     */
+    public function terminate(Request $request, Response $response): void
+    {
         if (! $this->shouldTrack($request)) {
-            return $response;
+            return;
         }
 
         try {
@@ -36,8 +42,6 @@ class TrackVisits
         } catch (Throwable $e) {
             // Never break user requests if visit tracking fails.
         }
-
-        return $response;
     }
 
     private function shouldTrack(Request $request): bool

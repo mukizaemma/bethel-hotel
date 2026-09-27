@@ -9,9 +9,11 @@ use App\Models\MediaImage;
 use App\Models\PageHero;
 use App\Models\Room;
 use App\Models\Roomimage;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MediaLibrary
 {
@@ -51,6 +53,103 @@ class MediaLibrary
         }
 
         return MediaImage::query()->whereIn('id', $ids)->get();
+    }
+
+    /**
+     * Public-disk path from a new upload or one selected library image.
+     * Uploads already at or under 700 KB are stored unchanged.
+     */
+    public function pathFromRequest(Request $request, string $fileKey, ?string $existingKey, string $directory): ?string
+    {
+        $file = $request->file($fileKey);
+        if ($file instanceof UploadedFile && $file->isValid()) {
+            return $this->ingestUploadedFile($file, $directory)->path;
+        }
+
+        if ($existingKey && $request->filled($existingKey)) {
+            $media = $this->findMany([(int) $request->input($existingKey)])->first();
+
+            return $media?->path;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function pathsFromRequest(Request $request, string $fileKey, ?string $existingKey, string $directory): array
+    {
+        $paths = [];
+        $files = $request->file($fileKey, []);
+        if ($files instanceof UploadedFile) {
+            $files = [$files];
+        }
+        foreach ((array) $files as $file) {
+            if ($file instanceof UploadedFile && $file->isValid()) {
+                $paths[] = $this->ingestUploadedFile($file, $directory)->path;
+            }
+        }
+
+        if ($existingKey) {
+            $ids = $request->input($existingKey, []);
+            if (! is_array($ids)) {
+                $ids = [$ids];
+            }
+            foreach ($this->findMany($ids) as $media) {
+                $paths[] = $media->path;
+            }
+        }
+
+        return $paths;
+    }
+
+    /**
+     * Filename stored by older forms that keep only the basename in a fixed folder.
+     */
+    public function legacyFilename(Request $request, string $fileKey, ?string $existingKey, string $directory): ?string
+    {
+        $path = $this->pathFromRequest($request, $fileKey, $existingKey, $directory);
+        if ($path === null) {
+            return null;
+        }
+
+        return basename($this->ensureInDirectory($path, $directory));
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function legacyFilenames(Request $request, string $fileKey, ?string $existingKey, string $directory): array
+    {
+        $names = [];
+        foreach ($this->pathsFromRequest($request, $fileKey, $existingKey, $directory) as $path) {
+            $names[] = basename($this->ensureInDirectory($path, $directory));
+        }
+
+        return $names;
+    }
+
+    public function ensureInDirectory(string $path, string $directory): string
+    {
+        $directory = trim($directory, '/');
+        $path = ltrim($path, '/');
+        if ($path === '') {
+            return $path;
+        }
+        if ($directory === '' || str_starts_with($path, $directory.'/')) {
+            return $path;
+        }
+
+        $extension = pathinfo($path, PATHINFO_EXTENSION) ?: 'jpg';
+        $dest = $directory.'/'.Str::uuid()->toString().'.'.$extension;
+        if (! Storage::disk('public')->exists($path)) {
+            return $path;
+        }
+
+        Storage::disk('public')->copy($path, $dest);
+
+        return $dest;
     }
 
     public function attachToGallery(MediaImage $media, ?string $caption = null, ?string $category = null): Gallery

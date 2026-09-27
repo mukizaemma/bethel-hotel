@@ -19,13 +19,7 @@ class TeamsController extends Controller
     public function store(Request $request)
     {
 
-        $fileName = '';
-        if($request->hasFile('image')){
-            $file = $request->file('image');
-
-            $path = $file->store('public/images/team');
-            $fileName = basename($path);
-        }
+        $fileName = app(\App\Services\MediaLibrary::class)->legacyFilename($request, 'image', 'existing_media_id', 'images/team') ?? '';
 
         $slug = Str::of($request->input('names'))->slug();
 
@@ -55,14 +49,9 @@ class TeamsController extends Controller
     public function update(Request $request, $id)
     {
         $post = StaffMember::findOrFail($id);
-        if($request->hasFile('image')){
-            $file = $request->file('image');
-
-            $path = $file->store('public/images/team');
-            $fileName = basename($path);
-            Storage::delete('public/images/team/' . $post->image);
-
-            $post->image = $fileName;
+        $replacement = app(\App\Services\MediaLibrary::class)->legacyFilename($request, 'image', 'existing_media_id', 'images/team');
+        if ($replacement) {
+            $post->image = $replacement;
         }
 
         $post->names = $request->input('names');

@@ -76,29 +76,14 @@ class SettingsController extends Controller
         $data->user_id = Auth()->user()->id;
 
 
-        if ($request->hasFile('logo') && request('logo') != '') {
-            $dir = 'public/images';
-
-            if (File::exists($dir)) {
-                unlink($dir);
-            }
-            $path = $request->file('logo')->store($dir);
-            $fileName = str_replace($dir, '', $path);
-
-            $data->logo = $fileName;
+        $mediaLibrary = app(\App\Services\MediaLibrary::class);
+        $logo = $mediaLibrary->legacyFilename($request, 'logo', 'existing_logo_id', 'images');
+        if ($logo) {
+            $data->logo = '/'.$logo;
         }
-
-
-        if ($request->hasFile('donate') && request('donate') != '') {
-            $dir = 'public/images';
-
-            if (File::exists($dir)) {
-                unlink($dir);
-            }
-            $path = $request->file('donate')->store($dir);
-            $fileNameLogo2 = str_replace($dir, '', $path);
-
-            $data->donate = $fileNameLogo2;
+        $footerLogo = $mediaLibrary->legacyFilename($request, 'donate', 'existing_donate_id', 'images');
+        if ($footerLogo) {
+            $data->donate = '/'.$footerLogo;
         }
 
         $saved = $data->update();

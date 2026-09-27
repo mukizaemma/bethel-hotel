@@ -137,8 +137,13 @@
                                                             style="color: red">(This Image should compressed to 600KB)</span></label>
                                                     <div class="input-group">
 
-                                                        <input type="file" name="image" class="form-control"
-                                                            id="image">
+                                                        @include('content-management.includes.media-picker', [
+                                                            'pickerId' => 'teamPhotoPicker',
+                                                            'multiple' => false,
+                                                            'existingName' => 'existing_media_id',
+                                                            'fileName' => 'image',
+                                                            'fileId' => 'image',
+                                                        ])
 
                                                     </div>
                                                 </div>

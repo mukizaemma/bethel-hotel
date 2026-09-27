@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\TourActivity;
 use App\Models\TourActivityImage;
+use App\Services\MediaLibrary;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
@@ -21,11 +22,15 @@ class TourActivityController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'cover_image' => 'nullable|image|max:2048',
+            'cover_image' => 'nullable|image|max:10240',
+            'existing_cover_media_id' => 'nullable|integer|exists:media_images,id',
             'status' => 'required|in:Active,Inactive',
-            'images.*' => 'nullable|image|max:2048',
+            'images.*' => 'nullable|image|max:10240',
+            'existing_media_ids' => 'nullable|array',
+            'existing_media_ids.*' => 'integer|exists:media_images,id',
         ]);
 
+        $mediaLibrary = app(MediaLibrary::class);
         $activity = new TourActivity();
         $activity->title = $request->title;
         $activity->slug = Str::slug($request->title);
@@ -33,21 +38,19 @@ class TourActivityController extends Controller
         $activity->status = $request->status;
         $activity->added_by = auth()->id();
 
-        if ($request->hasFile('cover_image')) {
-            $activity->cover_image = $request->file('cover_image')->store('tour-activities', 'public');
+        $cover = $mediaLibrary->pathFromRequest($request, 'cover_image', 'existing_cover_media_id', 'tour-activities');
+        if ($cover) {
+            $activity->cover_image = $cover;
         }
 
         $activity->save();
 
-        // Handle gallery images
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $index => $image) {
-                TourActivityImage::create([
-                    'tour_activity_id' => $activity->id,
-                    'image' => $image->store('tour-activities/gallery', 'public'),
-                    'order' => $index,
-                ]);
-            }
+        foreach ($mediaLibrary->pathsFromRequest($request, 'images', 'existing_media_ids', 'tour-activities/gallery') as $index => $path) {
+            TourActivityImage::create([
+                'tour_activity_id' => $activity->id,
+                'image' => $path,
+                'order' => $index,
+            ]);
         }
 
         return response()->json(['success' => true, 'message' => 'Tour activity created successfully']);
@@ -58,35 +61,36 @@ class TourActivityController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'cover_image' => 'nullable|image|max:2048',
+            'cover_image' => 'nullable|image|max:10240',
+            'existing_cover_media_id' => 'nullable|integer|exists:media_images,id',
             'status' => 'required|in:Active,Inactive',
-            'images.*' => 'nullable|image|max:2048',
+            'images.*' => 'nullable|image|max:10240',
+            'existing_media_ids' => 'nullable|array',
+            'existing_media_ids.*' => 'integer|exists:media_images,id',
         ]);
 
+        $mediaLibrary = app(MediaLibrary::class);
         $activity = TourActivity::findOrFail($id);
         $activity->title = $request->title;
         $activity->slug = Str::slug($request->title);
         $activity->description = $request->description;
         $activity->status = $request->status;
 
-        if ($request->hasFile('cover_image')) {
-            if ($activity->cover_image) {
-                Storage::disk('public')->delete($activity->cover_image);
-            }
-            $activity->cover_image = $request->file('cover_image')->store('tour-activities', 'public');
+        $cover = $mediaLibrary->pathFromRequest($request, 'cover_image', 'existing_cover_media_id', 'tour-activities');
+        if ($cover) {
+            $activity->cover_image = $cover;
         }
 
         $activity->save();
 
-        // Handle new gallery images
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $index => $image) {
-                TourActivityImage::create([
-                    'tour_activity_id' => $activity->id,
-                    'image' => $image->store('tour-activities/gallery', 'public'),
-                    'order' => $activity->images()->max('order') + $index + 1,
-                ]);
-            }
+        $order = (int) $activity->images()->max('order');
+        foreach ($mediaLibrary->pathsFromRequest($request, 'images', 'existing_media_ids', 'tour-activities/gallery') as $path) {
+            $order++;
+            TourActivityImage::create([
+                'tour_activity_id' => $activity->id,
+                'image' => $path,
+                'order' => $order,
+            ]);
         }
 
         return response()->json(['success' => true, 'message' => 'Tour activity updated successfully']);

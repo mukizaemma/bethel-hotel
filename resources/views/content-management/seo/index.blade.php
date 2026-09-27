@@ -79,7 +79,13 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">OG Image</label>
-                        <input type="file" class="form-control" id="seo_og_image" name="og_image" accept="image/*">
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'seoOgPicker',
+                            'multiple' => false,
+                            'existingName' => 'existing_og_media_id',
+                            'fileName' => 'og_image',
+                            'fileId' => 'seo_og_image',
+                        ])
                     </div>
                 </div>
                 <div class="modal-footer">

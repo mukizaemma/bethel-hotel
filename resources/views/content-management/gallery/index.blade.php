@@ -119,7 +119,13 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Thumbnail</label>
-                            <input type="file" class="form-control" name="thumbnail" id="gallery_thumbnail" accept="image/*">
+                            @include('content-management.includes.media-picker', [
+                                'pickerId' => 'galleryThumbPicker',
+                                'multiple' => false,
+                                'existingName' => 'existing_thumbnail_id',
+                                'fileName' => 'thumbnail',
+                                'fileId' => 'gallery_thumbnail',
+                            ])
                         </div>
                     </div>
                     <div class="mb-3">

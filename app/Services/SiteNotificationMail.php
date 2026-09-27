@@ -31,8 +31,16 @@ class SiteNotificationMail
 
             return false;
         }
+        if (config('mail.default') === 'resend') {
+            $key = config('resend.api_key') ?? config('services.resend.key');
+            if (! is_string($key) || $key === '') {
+                Log::warning('Site notification: RESEND_API_KEY is missing.');
+
+                return false;
+            }
+        }
         try {
-            $pending = Mail::to($to);
+            $pending = Mail::mailer(config('mail.default', 'resend'))->to($to);
             $cc = self::adminCc();
             if ($cc !== null && $cc !== '') {
                 $pending->cc($cc);
@@ -57,8 +65,16 @@ class SiteNotificationMail
         if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return false;
         }
+        if (config('mail.default') === 'resend') {
+            $key = config('resend.api_key') ?? config('services.resend.key');
+            if (! is_string($key) || $key === '') {
+                Log::warning('Site notification: RESEND_API_KEY is missing.');
+
+                return false;
+            }
+        }
         try {
-            Mail::to($email)->send($mailable);
+            Mail::mailer(config('mail.default', 'resend'))->to($email)->send($mailable);
 
             return true;
         } catch (\Throwable $e) {

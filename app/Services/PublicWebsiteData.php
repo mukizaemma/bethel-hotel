@@ -25,40 +25,102 @@ use App\Models\TermsCondition;
 use App\Models\TourActivity;
 use App\Models\Trip;
 use App\Models\WhyChooseUsItem;
+use App\Support\HotelChannels;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class PublicWebsiteData
 {
+    private const CACHE_TTL_SECONDS = 600;
+
+    private const LAYOUT_CACHE_KEY = 'public.layout.v1';
+
+    private const HOME_CACHE_KEY = 'public.home.v1';
+
+    private const CONTACT_CACHE_KEY = 'public.hotel_contact.v1';
+
+    public static function forgetCaches(): void
+    {
+        Cache::forget(self::LAYOUT_CACHE_KEY);
+        Cache::forget(self::HOME_CACHE_KEY);
+        Cache::forget(self::CONTACT_CACHE_KEY);
+        HotelChannels::forgetCache();
+    }
+
+    /**
+     * Shared header/footer data. Cached so every public page does not repeat the same queries.
+     *
+     * @return array{rooms: \Illuminate\Support\Collection, facilities: \Illuminate\Support\Collection, setting: ?Setting, about: ?About, whyChooseUsItems: \Illuminate\Support\Collection}
+     */
+    public static function layout(): array
+    {
+        return Cache::remember(self::LAYOUT_CACHE_KEY, self::CACHE_TTL_SECONDS, function () {
+            return [
+                'rooms' => Room::query()
+                    ->where('status', 'Active')
+                    ->oldest()
+                    ->get(['id', 'title', 'slug']),
+                'facilities' => Facility::query()
+                    ->where('status', 'Active')
+                    ->oldest()
+                    ->get(['id', 'title', 'slug']),
+                'setting' => Setting::query()->first(),
+                'about' => About::query()->first(),
+                'whyChooseUsItems' => WhyChooseUsItem::query()->orderBy('sort_order')->orderBy('id')->get(),
+            ];
+        });
+    }
+
+    public static function hotelContact(): ?HotelContact
+    {
+        $contact = Cache::remember(self::CONTACT_CACHE_KEY, self::CACHE_TTL_SECONDS, function () {
+            return HotelContact::query()->first();
+        });
+
+        return $contact instanceof HotelContact ? $contact : null;
+    }
+
     public static function home(): array
     {
-        $setting = Setting::first();
-        $slides = Slide::query()->orderBy('id')->get();
-        $about = About::first();
-        $rooms = Room::with('amenities')
-            ->where('status', 'Active')
-            ->latest()
-            ->get();
-        $gallery = Gallery::query()->where('media_type', 'image')->with('mediaImage')->ordered()->take(9)->get();
-        $homeFacilities = Facility::where('status', 'Active')->latest()->take(4)->get();
-        $services = Service::where('status', 'Active')->with('images')->latest()->take(4)->get();
-        $blogs = Blog::where('status', 'Published')->latest()->take(3)->get() ?? collect();
-        $reviews = Review::approved()->latest()->take(3)->get();
-        $reviewCount = Review::approved()->count();
-        $whyChooseUsItems = WhyChooseUsItem::query()->orderBy('sort_order')->orderBy('id')->get();
+        return Cache::remember(self::HOME_CACHE_KEY, self::CACHE_TTL_SECONDS, function () {
+            $shared = self::layout();
+            $slides = Slide::query()->orderBy('id')->get();
+            $lcpImage = null;
 
-        return [
-            'setting' => $setting,
-            'slides' => $slides,
-            'about' => $about,
-            'rooms' => $rooms,
-            'gallery' => $gallery,
-            'homeFacilities' => $homeFacilities,
-            'services' => $services,
-            'blogs' => $blogs,
-            'reviews' => $reviews,
-            'reviewCount' => $reviewCount,
-            'whyChooseUsItems' => $whyChooseUsItems,
-        ];
+            foreach ($slides as $slide) {
+                if (($slide->media_type ?? 'image') !== 'image') {
+                    continue;
+                }
+
+                $url = $slide->imageUrl();
+                $slide->setAttribute('resolved_image_url', $url);
+                if ($lcpImage === null && filled($url)) {
+                    $lcpImage = $url;
+                }
+            }
+
+            return [
+                'setting' => $shared['setting'],
+                'slides' => $slides,
+                'about' => $shared['about'],
+                'rooms' => Room::query()
+                    ->where('status', 'Active')
+                    ->latest()
+                    ->get(['id', 'title', 'slug', 'price', 'description', 'cover_image', 'image']),
+                'homeFacilities' => Facility::query()
+                    ->where('status', 'Active')
+                    ->latest()
+                    ->take(4)
+                    ->get(['id', 'title', 'slug', 'description', 'cover_image', 'image']),
+                'blogs' => Blog::query()
+                    ->where('status', 'Published')
+                    ->latest()
+                    ->take(3)
+                    ->get(['id', 'title', 'slug', 'body', 'image', 'created_at']),
+                'whyChooseUsItems' => $shared['whyChooseUsItems'],
+                'lcpImage' => $lcpImage,
+            ];
+        });
     }
 
     public static function about(): array

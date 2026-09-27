@@ -316,7 +316,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
 
     // Gallery
-    Route::get('/slides', [App\Http\Controllers\SlidesController::class, 'index'])->name('slides');
+    Route::redirect('/slides', '/content-management/slideshow')->name('slides');
     Route::post('/saveSlide', [App\Http\Controllers\SlidesController::class, 'store'])->name('saveSlide');
     Route::get('/editSlide/{id}', [App\Http\Controllers\SlidesController::class, 'edit'])->name('editSlide');
     Route::post('/updateSlide/{id}', [App\Http\Controllers\SlidesController::class, 'update'])->name('updateSlide');
@@ -411,6 +411,7 @@ Route::get('/user/account', [App\Http\Controllers\HomeController::class, 'newAcc
 Route::post('/createAccount', [App\Http\Controllers\HomeController::class, 'createAccount'])->name('createAccount');
 
 Route::get('/book-now', BookNowPage::class)->name('connect');
+Route::post('/book-now', [App\Http\Controllers\HomeController::class, 'bookNow'])->name('book-now.submit');
 
 // Normal user (guest role) account — bookings & profile
 Route::middleware(['auth', 'normaluser'])->prefix('account')->name('account.')->group(function () {

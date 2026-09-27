@@ -40,7 +40,7 @@
             @foreach ($heroSlides as $index => $slide)
             @php
                 $isFallback = isset($slide->image_url);
-                $imageUrl = $isFallback ? $slide->image_url : $slide->imageUrl();
+                $imageUrl = $isFallback ? $slide->image_url : ($slide->resolved_image_url ?: $slide->imageUrl());
                 $ctaLink = filled($slide->link ?? null) ? $slide->link : route('connect');
                 $ctaLabel = filled($slide->button ?? null) ? $slide->button : 'Book Now';
             @endphp
@@ -61,27 +61,31 @@
                             @endphp
                             @if($videoType === 'youtube')
                                 <iframe
-                                    src="https://www.youtube.com/embed/{{ $videoId }}?autoplay=1&mute=1&loop=1&playlist={{ $videoId }}&controls=0&showinfo=0&rel=0&iv_load_policy=3"
+                                    @if($index === 0) src="https://www.youtube.com/embed/{{ $videoId }}?autoplay=1&mute=1&loop=1&playlist={{ $videoId }}&controls=0&showinfo=0&rel=0&iv_load_policy=3" @endif
+                                    data-src="https://www.youtube.com/embed/{{ $videoId }}?autoplay=1&mute=1&loop=1&playlist={{ $videoId }}&controls=0&showinfo=0&rel=0&iv_load_policy=3"
                                     frameborder="0"
+                                    loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
                                     allow="autoplay; encrypted-media"
                                     allowfullscreen
                                     style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; object-fit: cover;">
                                 </iframe>
                             @elseif($videoType === 'vimeo')
                                 <iframe
-                                    src="https://player.vimeo.com/video/{{ $videoId }}?autoplay=1&muted=1&loop=1&background=1"
+                                    @if($index === 0) src="https://player.vimeo.com/video/{{ $videoId }}?autoplay=1&muted=1&loop=1&background=1" @endif
+                                    data-src="https://player.vimeo.com/video/{{ $videoId }}?autoplay=1&muted=1&loop=1&background=1"
                                     frameborder="0"
+                                    loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
                                     allow="autoplay; fullscreen; picture-in-picture"
                                     allowfullscreen
                                     style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; object-fit: cover;">
                                 </iframe>
                             @else
-                                <video autoplay muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;">
+                                <video @if($index === 0) autoplay @endif muted loop playsinline preload="{{ $index === 0 ? 'metadata' : 'none' }}" style="width: 100%; height: 100%; object-fit: cover;">
                                     <source src="{{ $slide->video_url }}" type="video/mp4">
                                 </video>
                             @endif
                         @elseif($slide->video_file)
-                            <video autoplay muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;">
+                            <video @if($index === 0) autoplay @endif muted loop playsinline preload="{{ $index === 0 ? 'metadata' : 'none' }}" style="width: 100%; height: 100%; object-fit: cover;">
                                 <source src="{{ asset('storage/' . ltrim($slide->video_file, '/')) }}" type="video/mp4">
                             </video>
                         @endif

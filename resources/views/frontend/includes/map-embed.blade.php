@@ -1,6 +1,6 @@
 @php
     $setting = $setting ?? \App\Models\Setting::first();
-    $hc = \App\Models\HotelContact::first();
+    $hc = \App\Services\PublicWebsiteData::hotelContact();
     $channels = \App\Support\HotelChannels::all();
     $embedRaw = trim((string) (
         $setting?->google_map_embed
@@ -14,6 +14,9 @@
     if ($embedRaw !== '') {
         if (str_contains(strtolower($embedRaw), '<iframe')) {
             $mapHtml = $embedRaw;
+            if (! str_contains(strtolower($mapHtml), 'loading=')) {
+                $mapHtml = preg_replace('/<iframe/i', '<iframe loading="lazy"', $mapHtml, 1);
+            }
         } elseif (filter_var($embedRaw, FILTER_VALIDATE_URL)) {
             $mapSrc = $embedRaw;
         }

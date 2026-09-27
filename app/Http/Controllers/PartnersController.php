@@ -28,13 +28,7 @@ class PartnersController extends Controller
         public function store(Request $request): RedirectResponse
         {
     
-            $fileName = '';
-            if($request->hasFile('image')){
-                $file = $request->file('image');
-    
-                $path = $file->store('public/images/partners');
-                $fileName = basename($path);
-            }
+            $fileName = app(\App\Services\MediaLibrary::class)->legacyFilename($request, 'image', 'existing_media_id', 'images/partners') ?? '';
     
             // Generate the slug
             $slug = Str::of($request->input('name'))->slug();
@@ -70,11 +64,9 @@ class PartnersController extends Controller
         try {
             $partner = Partner::findOrFail($id);
     
-            if ($request->hasFile('image')) {
-                $file = $request->file('image');
-                $path = $file->store('public/images/partners');
-                Storage::delete('public/images/partners/' . $partner->image);
-                $partner->image = basename($path);
+            $replacement = app(\App\Services\MediaLibrary::class)->legacyFilename($request, 'image', 'existing_media_id', 'images/partners');
+            if ($replacement) {
+                $partner->image = $replacement;
             }
     
             $fields = ['name', 'website','description','status'];

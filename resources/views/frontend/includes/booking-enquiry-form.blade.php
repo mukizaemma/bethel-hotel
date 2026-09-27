@@ -77,7 +77,8 @@
 
         <div class="col-md-6">
             <label class="home-cta__label" for="{{ $formId }}-email">Email <span class="home-cta__req">*</span></label>
-            <input type="email" class="home-cta__input" id="{{ $formId }}-email" name="email" value="{{ old('email') }}" required autocomplete="email">
+            <input type="email" class="home-cta__input" id="{{ $formId }}-email" name="email" value="{{ old('email') }}" required autocomplete="email" inputmode="email" spellcheck="false" placeholder="name@example.com">
+            <p class="home-cta__form-note mb-0 mt-1">Use an email that can receive mail. Invalid addresses are not saved.</p>
         </div>
         <div class="col-md-6">
             <label class="home-cta__label" for="{{ $formId }}-subject" data-subject-label>
@@ -167,12 +168,21 @@
         </div>
 
         <div class="col-12">
-            <button type="submit" class="theme-btn btn-style fill home-cta__submit bethel-enquiry-form__submit w-100" data-enquiry-submit>
-                <i class="fa-solid fa-paper-plane home-cta__submit-icon" aria-hidden="true" data-enquiry-submit-icon></i>
-                <span data-enquiry-submit-label>Send enquiry</span>
-            </button>
+            <p class="home-cta__label mb-2">How would you like to send this request? <span class="home-cta__req">*</span></p>
+            <div class="bethel-enquiry-form__actions">
+                <button type="submit" name="submit_via" value="email" class="theme-btn btn-style fill home-cta__submit bethel-enquiry-form__submit" data-enquiry-submit-email>
+                    <i class="fa-solid fa-envelope home-cta__submit-icon" aria-hidden="true" data-enquiry-email-icon></i>
+                    <span data-enquiry-email-label>Send by email</span>
+                </button>
+                @if(filled(\App\Services\ReservationNotifier::whatsappDigits()))
+                <button type="submit" name="submit_via" value="whatsapp" class="theme-btn btn-style bethel-enquiry-form__submit bethel-enquiry-form__submit--wa" data-enquiry-submit-wa>
+                    <i class="fa-brands fa-whatsapp home-cta__submit-icon" aria-hidden="true"></i>
+                    <span data-enquiry-wa-label>Send via WhatsApp</span>
+                </button>
+                @endif
+            </div>
             <p class="home-cta__form-note bethel-enquiry-form__note mb-0" data-enquiry-note>
-                We reply within one business day. Your details are only used to respond to this request.
+                Choose email to get a confirmation in your inbox, or WhatsApp to continue the request in WhatsApp Web.
             </p>
         </div>
     </div>
@@ -213,9 +223,11 @@
         var roomFields = form.querySelectorAll('[data-room-required]');
         var meetingFields = form.querySelectorAll('[data-meetings-required]');
         var diningFields = form.querySelectorAll('[data-dining-required]');
-        var submitLabel = form.querySelector('[data-enquiry-submit-label]');
-        var submitIcon = form.querySelector('[data-enquiry-submit-icon]');
+        var submitEmailLabel = form.querySelector('[data-enquiry-email-label]');
+        var submitEmailIcon = form.querySelector('[data-enquiry-email-icon]');
+        var submitWaLabel = form.querySelector('[data-enquiry-wa-label]');
         var formNote = form.querySelector('[data-enquiry-note]');
+        var emailInput = form.querySelector('input[name="email"]');
         var checkinInput = form.querySelector('#' + form.id + '-checkin');
         var checkoutInput = form.querySelector('#' + form.id + '-checkout');
 
@@ -283,18 +295,21 @@
                 messageOptional.hidden = messageIsRequired;
             }
 
-            if (submitLabel) {
-                submitLabel.textContent = type === 'room' ? 'Book room' : 'Send enquiry';
+            if (submitEmailLabel) {
+                submitEmailLabel.textContent = type === 'room' ? 'Book by email' : 'Send by email';
             }
-            if (submitIcon) {
-                submitIcon.className = type === 'room'
+            if (submitEmailIcon) {
+                submitEmailIcon.className = type === 'room'
                     ? 'fa-solid fa-bed home-cta__submit-icon'
-                    : 'fa-solid fa-paper-plane home-cta__submit-icon';
+                    : 'fa-solid fa-envelope home-cta__submit-icon';
+            }
+            if (submitWaLabel) {
+                submitWaLabel.textContent = type === 'room' ? 'Book via WhatsApp' : 'Send via WhatsApp';
             }
             if (formNote) {
                 formNote.textContent = type === 'room'
-                    ? 'Your booking request is pending confirmation. We will confirm availability shortly.'
-                    : 'We reply within one business day. Your details are only used to respond to this request.';
+                    ? 'Email sends a confirmation to you and the hotel. WhatsApp opens WhatsApp Web in a new tab after your request is saved.'
+                    : 'Email notifies you and the hotel. WhatsApp opens WhatsApp Web in a new tab after your request is saved.';
             }
 
             if (type === 'room') {
@@ -308,6 +323,13 @@
 
         typeSelect.addEventListener('change', syncForm);
         syncForm();
+
+        form.addEventListener('submit', function (event) {
+            if (emailInput && !emailInput.checkValidity()) {
+                event.preventDefault();
+                emailInput.reportValidity();
+            }
+        });
     }
 
     function initAllBethelEnquiryForms() {

@@ -58,11 +58,21 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">About page photo</label>
-                                <input type="file" class="form-control" name="image1" accept="image/*">
+                                @include('content-management.includes.media-picker', [
+                                    'pickerId' => 'aboutImage1Picker',
+                                    'multiple' => false,
+                                    'existingName' => 'existing_image1_id',
+                                    'fileName' => 'image1',
+                                ])
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Homepage middle photo</label>
-                                <input type="file" class="form-control" name="image2" accept="image/*">
+                                @include('content-management.includes.media-picker', [
+                                    'pickerId' => 'aboutImage2Picker',
+                                    'multiple' => false,
+                                    'existingName' => 'existing_image2_id',
+                                    'fileName' => 'image2',
+                                ])
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary">Update About</button>
@@ -175,7 +185,13 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">OG Image</label>
-                        <input type="file" class="form-control" id="seo_og_image" name="og_image" accept="image/*">
+                        @include('content-management.includes.media-picker', [
+                            'pickerId' => 'aboutSeoOgPicker',
+                            'multiple' => false,
+                            'existingName' => 'existing_og_media_id',
+                            'fileName' => 'og_image',
+                            'fileId' => 'seo_og_image',
+                        ])
                     </div>
                 </div>
                 <div class="modal-footer">

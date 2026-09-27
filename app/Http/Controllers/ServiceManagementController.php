@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Service;
 use App\Models\ServiceImage;
+use App\Services\MediaLibrary;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
@@ -21,10 +22,19 @@ class ServiceManagementController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'cover_image' => 'required|image|max:2048',
+            'cover_image' => 'nullable|image|max:10240',
+            'existing_cover_media_id' => 'nullable|integer|exists:media_images,id',
             'status' => 'required|in:Active,Inactive',
-            'images.*' => 'nullable|image|max:2048',
+            'images.*' => 'nullable|image|max:10240',
+            'existing_media_ids' => 'nullable|array',
+            'existing_media_ids.*' => 'integer|exists:media_images,id',
         ]);
+
+        $mediaLibrary = app(MediaLibrary::class);
+        $cover = $mediaLibrary->pathFromRequest($request, 'cover_image', 'existing_cover_media_id', 'services');
+        if (! $cover) {
+            return response()->json(['success' => false, 'message' => 'Upload a cover image or select one from the library.'], 422);
+        }
 
         $service = new Service();
         $service->title = $request->title;
@@ -32,22 +42,15 @@ class ServiceManagementController extends Controller
         $service->description = $request->description;
         $service->status = $request->status;
         $service->added_by = auth()->id();
-
-        if ($request->hasFile('cover_image')) {
-            $service->cover_image = $request->file('cover_image')->store('services', 'public');
-        }
-
+        $service->cover_image = $cover;
         $service->save();
 
-        // Handle gallery images
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $index => $image) {
-                ServiceImage::create([
-                    'service_id' => $service->id,
-                    'image' => $image->store('services/gallery', 'public'),
-                    'order' => $index,
-                ]);
-            }
+        foreach ($mediaLibrary->pathsFromRequest($request, 'images', 'existing_media_ids', 'services/gallery') as $index => $path) {
+            ServiceImage::create([
+                'service_id' => $service->id,
+                'image' => $path,
+                'order' => $index,
+            ]);
         }
 
         return response()->json(['success' => true, 'message' => 'Service created successfully']);
@@ -58,36 +61,36 @@ class ServiceManagementController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'cover_image' => 'nullable|image|max:2048',
+            'cover_image' => 'nullable|image|max:10240',
+            'existing_cover_media_id' => 'nullable|integer|exists:media_images,id',
             'status' => 'required|in:Active,Inactive',
-            'images.*' => 'nullable|image|max:2048',
+            'images.*' => 'nullable|image|max:10240',
+            'existing_media_ids' => 'nullable|array',
+            'existing_media_ids.*' => 'integer|exists:media_images,id',
         ]);
 
+        $mediaLibrary = app(MediaLibrary::class);
         $service = Service::findOrFail($id);
         $service->title = $request->title;
         $service->slug = Str::slug($request->title);
         $service->description = $request->description;
         $service->status = $request->status;
 
-        if ($request->hasFile('cover_image')) {
-            if ($service->cover_image) {
-                Storage::disk('public')->delete($service->cover_image);
-            }
-            $service->cover_image = $request->file('cover_image')->store('services', 'public');
+        $cover = $mediaLibrary->pathFromRequest($request, 'cover_image', 'existing_cover_media_id', 'services');
+        if ($cover) {
+            $service->cover_image = $cover;
         }
 
         $service->save();
 
-        // Handle new gallery images
-        if ($request->hasFile('images')) {
-            $maxOrder = $service->images()->max('order') ?? 0;
-            foreach ($request->file('images') as $index => $image) {
-                ServiceImage::create([
-                    'service_id' => $service->id,
-                    'image' => $image->store('services/gallery', 'public'),
-                    'order' => $maxOrder + $index + 1,
-                ]);
-            }
+        $order = (int) ($service->images()->max('order') ?? 0);
+        foreach ($mediaLibrary->pathsFromRequest($request, 'images', 'existing_media_ids', 'services/gallery') as $path) {
+            $order++;
+            ServiceImage::create([
+                'service_id' => $service->id,
+                'image' => $path,
+                'order' => $order,
+            ]);
         }
 
         return response()->json(['success' => true, 'message' => 'Service updated successfully']);
