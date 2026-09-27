@@ -236,13 +236,20 @@
             max-width: 100%;
             vertical-align: bottom;
         }
-        /* Home hero: full viewport height, same for every slide */
+        /* Home hero: full viewport width and height, same for every slide */
         .livewire-home-page .banner__area.is__home__one.banner__height {
+            display: block;
+            width: 100vw;
+            max-width: 100vw;
+            margin-left: calc(50% - 50vw);
+            margin-right: calc(50% - 50vw);
             min-height: 100vh;
             min-height: 100dvh;
-            padding-block: 0;
+            padding: 0;
         }
         .livewire-home-page .banner__area.is__home__one .banner__slider {
+            width: 100%;
+            max-width: none;
             min-height: 100vh;
             min-height: 100dvh;
         }
@@ -319,12 +326,15 @@
             opacity: 1 !important;
         }
         .livewire-home-page .banner__slider__image img,
-        .livewire-home-page .banner__slider__image video {
+        .livewire-home-page .banner__slider__image video,
+        .livewire-home-page .banner__slider__image iframe {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
+            max-width: none;
             object-fit: cover;
-            object-position: center 42%;
-            transform: scale(1.14);
+            object-position: center center;
         }
         .livewire-home-page .hero-swiper-pagination {
             bottom: 1.35rem !important;
