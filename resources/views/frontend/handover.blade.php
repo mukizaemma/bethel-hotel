@@ -810,7 +810,7 @@
 <div class="ho" id="handover-app">
     <header class="ho-top ho-no-print">
         <div>
-            <p class="ho-brand">KURRE Consultancy · Prepared for <strong>Bethel Hotel</strong></p>
+            <p class="ho-brand">Ireme Tech · Prepared for <strong>Bethel Hotel</strong></p>
             <p class="ho-brand" style="letter-spacing:0;text-transform:none;font-size:0.95rem;">Client handover &amp; user guide · September 2026</p>
         </div>
         <div class="ho-actions">
@@ -829,13 +829,13 @@
 
     <div class="ho-card">
         <section class="ho-section" id="overview" data-label="Overview">
-            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · KURRE Consultancy</p>
+            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · Ireme Tech</p>
             <p class="ho-kicker">Document</p>
             <h2>Client handover &amp; user guide</h2>
             <p class="ho-lead">This guide is how Bethel Hotel takes over the website: who may edit it, how each admin feature is created, read, updated, and removed, and how the live site is maintained.</p>
             <div class="ho-meta">
                 <div><span>Prepared for</span><strong>Bethel Hotel</strong></div>
-                <div><span>Prepared by</span><strong>KURRE Consultancy</strong></div>
+                <div><span>Prepared by</span><strong>Ireme Tech</strong></div>
                 <div><span>Live domain</span><strong>{{ $domain }}</strong></div>
             </div>
             <p>The website is the hotel’s public presence. It presents rooms, dining, facilities, meetings, activities, and news, and it sends guests to trusted places to book and leave reviews. Day-to-day edits are made after an admin signs in. Server passwords are not printed in this document.</p>
@@ -851,14 +851,14 @@
         </section>
 
         <section class="ho-section" id="access" data-label="Admin access">
-            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · KURRE Consultancy</p>
+            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · Ireme Tech</p>
             <p class="ho-kicker">Access</p>
             <h2>Create an account, then ask for admin</h2>
             <p class="ho-lead">Registration creates a normal account. It does not make someone an administrator. After the account exists, ask the developer to make that user the admin.</p>
             <ol class="ho-steps">
                 <li>Open <a href="{{ $registerUrl }}">Create an account</a> and register with the name and email that should manage the website. On the live site this page is <strong>{{ $live }}/register</strong>.</li>
                 <li>Use an email the person can access. They will need it to sign in and to receive a password reset if one is required.</li>
-                <li>Contact the developer at <strong>KURRE Consultancy</strong> on the same channel used for this project. Send the <strong>full name and email</strong> on the new account and ask them to make that user the admin.</li>
+                <li>Contact the developer at <strong>Ireme Tech</strong> on the same channel used for this project. Send the <strong>full name and email</strong> on the new account and ask them to make that user the admin.</li>
                 <li>Wait for confirmation. Until the role is assigned, that person cannot open content management.</li>
                 <li>Sign in at <a href="{{ $loginUrl }}">{{ $loginUrl }}</a>. An admin is taken to <a href="{{ $dashboardUrl }}">{{ $dashboardUrl }}</a>.</li>
             </ol>
@@ -873,7 +873,7 @@
         </section>
 
         <section class="ho-section" id="guide" data-label="Admin guide">
-            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · KURRE Consultancy</p>
+            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · Ireme Tech</p>
             <p class="ho-kicker">Admin user guide</p>
             <h2>Features, one at a time</h2>
             <p>After you are an admin, the left sidebar is the menu. Most content screens use the same four actions. <strong>Create</strong> is usually an Add button. <strong>Read</strong> is the list or the eye icon. <strong>Update</strong> is the pencil icon or a Save button. <strong>Delete</strong> is the trash icon and always asks you to confirm. Save, then check the public page in a private window so you are not looking at an old copy.</p>
@@ -911,7 +911,7 @@
         </section>
 
         <section class="ho-section" id="website" data-label="Public website">
-            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · KURRE Consultancy</p>
+            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · Ireme Tech</p>
             <p class="ho-kicker">Public website</p>
             <h2>What guests see</h2>
             <p class="ho-lead">The public site introduces the hotel and points guests outward to book and review. It does not take card payments and it does not replace Booking.com.</p>
@@ -945,7 +945,7 @@
         </section>
 
         <section class="ho-section" id="maintenance" data-label="Maintenance">
-            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · KURRE Consultancy</p>
+            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · Ireme Tech</p>
             <p class="ho-kicker">Maintenance</p>
             <h2>Domain, server, and hosting</h2>
             <p class="ho-lead">The live website is published at <strong>{{ $domain }}</strong>. Content changes are made by an admin in the browser. Server and hosting passwords are shared separately, and only if the hotel wants to follow the hosting up on its own.</p>
@@ -980,7 +980,7 @@
                 </div>
                 <div>
                     <dt>Hosting credentials</dt>
-                    <dd>The hosting control panel, file access, and database passwords are <strong>not included in this guide</strong>. KURRE Consultancy will share them once they are needed, if the hotel wants to follow the server up independently. Until then, do not request or store those passwords in a general staff channel.</dd>
+                    <dd>The hosting control panel, file access, and database passwords are <strong>not included in this guide</strong>. Ireme Tech will share them once they are needed, if the hotel wants to follow the server up independently. Until then, do not request or store those passwords in a general staff channel.</dd>
                 </div>
             </dl>
             <div class="ho-note">
@@ -990,20 +990,20 @@
         </section>
 
         <section class="ho-section" id="close" data-label="Support">
-            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · KURRE Consultancy</p>
+            <p class="ho-print-only ho-doc-running">Bethel Hotel · Client handover · Ireme Tech</p>
             <p class="ho-kicker">Support</p>
             <h2>Training and further help</h2>
-            <p class="ho-lead">KURRE Consultancy remains available so the hotel can keep the site current as content, channels, and guest expectations change.</p>
+            <p class="ho-lead">Ireme Tech remains available so the hotel can keep the site current as content, channels, and guest expectations change.</p>
             <div class="ho-callout">
                 <strong>When to ask for a training session</strong>
-                <p style="margin:0.35rem 0 0;">If several staff members need to edit the site, or if this guide is not enough on its own, arrange a walkthrough with KURRE Consultancy. A short session is the reliable way to confirm that more than one person can update rooms, photos, and booking links.</p>
+                <p style="margin:0.35rem 0 0;">If several staff members need to edit the site, or if this guide is not enough on its own, arrange a walkthrough with Ireme Tech. A short session is the reliable way to confirm that more than one person can update rooms, photos, and booking links.</p>
             </div>
             <ul class="ho-steps">
                 <li>For a new administrator: send the registered name and email and ask the developer to make that user the admin.</li>
                 <li>For content that will not save or does not appear: say which sidebar item you used and what you expected to see on the public page.</li>
                 <li>For hosting, the domain, or email delivery: ask through the project channel. Credentials are shared only when the hotel wants to follow that up itself.</li>
             </ul>
-            <p>Thank you to Bethel Hotel for trusting KURRE Consultancy with this project. Share this guide inside the hotel at <a href="{{ url('/handover') }}">{{ url('/handover') }}</a>. It is marked so search engines are not asked to list it.</p>
+            <p>Thank you to Bethel Hotel for trusting Ireme Tech with this project. Share this guide inside the hotel at <a href="{{ url('/handover') }}">{{ url('/handover') }}</a>. It is marked so search engines are not asked to list it.</p>
         </section>
     </div>
 
