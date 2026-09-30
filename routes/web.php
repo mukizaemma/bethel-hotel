@@ -162,6 +162,11 @@ Route::middleware(['auth', 'admin'])->prefix('content-management')->name('conten
     Route::get('/page-heroes', ContentManagementPageHeroes::class)->name('page-heroes');
     Route::post('/page-heroes/{id}/update', [App\Http\Controllers\ContentManagementController::class, 'updatePageHero'])->name('page-heroes.update');
     
+    Route::get('/hosting', [App\Http\Controllers\HostingInvoiceController::class, 'index'])->name('hosting.index');
+    Route::post('/hosting/rate', [App\Http\Controllers\HostingInvoiceController::class, 'updateRate'])->name('hosting.rate');
+    Route::post('/hosting/{invoice}/paid', [App\Http\Controllers\HostingInvoiceController::class, 'markPaid'])->name('hosting.paid');
+    Route::get('/hosting/{invoice}', [App\Http\Controllers\HostingInvoiceController::class, 'show'])->name('hosting.show');
+
     // Reservations (rooms + facilities, via tabs)
     Route::get('/reservations', ContentManagementReservations::class)->name('reservations');
     Route::get('/reservations/{id}', [App\Http\Controllers\ContentManagementController::class, 'showReservation'])->name('reservations.show');

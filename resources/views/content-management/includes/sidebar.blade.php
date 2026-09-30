@@ -109,6 +109,9 @@ $isEventsPageAdmin = $currentRoute === 'eventsPage' || str_contains(strtolower((
             </a>
             @endif
 
+            <a href="{{ route('content-management.hosting.index') }}" class="nav-item nav-link {{ str_contains((string) $currentRoute, 'content-management.hosting') ? 'active' : '' }}">
+                <i class="fas fa-file-invoice me-2"></i>Hosting
+            </a>
             <a href="{{ route('setting') }}" class="nav-item nav-link {{ in_array($currentRoute, ['setting', 'saveSetting', 'homePage', 'saveHome', 'aboutPage', 'saveAbout'], true) || str_starts_with((string) $currentRoute, 'setting.') ? 'active' : '' }}">
                 <i class="fas fa-cog me-2"></i>Settings
             </a>
