@@ -58,6 +58,11 @@
                                             <button type="button" class="btn btn-sm btn-info" onclick="openReservationModal({{ $booking->id }})">
                                                 <i class="fa fa-eye"></i>
                                             </button>
+                                            @if(!empty($canDeleteReservations))
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteReservation({{ $booking->id }})" title="Delete reservation">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty
@@ -106,6 +111,11 @@
                                             <button type="button" class="btn btn-sm btn-info" onclick="openReservationModal({{ $booking->id }})">
                                                 <i class="fa fa-eye"></i>
                                             </button>
+                                            @if(!empty($canDeleteReservations))
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteReservation({{ $booking->id }})" title="Delete reservation">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty
@@ -128,7 +138,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Reservation Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div id="reservationDetails" class="mb-4">
@@ -154,7 +164,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" onclick="submitReservationReply()">Send Reply</button>
             </div>
         </div>
@@ -179,8 +189,8 @@ function openReservationModal(id) {
                 itemName = data.room.title;
             }
 
-            const checkin = data.checkin_date ?? '';
-            const checkout = data.checkout_date ?? '';
+            const checkin = (data.checkin_date || '').toString().slice(0, 10);
+            const checkout = (data.checkout_date || '').toString().slice(0, 10);
 
             detailsDiv.innerHTML = `
                 <dl class="row mb-0">
@@ -246,6 +256,43 @@ function submitReservationReply() {
     .catch(error => {
         alert('An error occurred while sending the reply. Please try again.');
         console.error(error);
+    });
+}
+
+function deleteReservation(id) {
+    if (!confirm('Delete this reservation?')) return;
+
+    fetch(`{{ route('content-management.reservations.destroy', ':id') }}`.replace(':id', id), {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(function (response) {
+        return response.json().then(function (data) {
+            return { ok: response.ok, data: data };
+        });
+    })
+    .then(function (result) {
+        if (result.ok && result.data.success) {
+            var modalElement = document.getElementById('reservationModal');
+            if (modalElement) {
+                modalElement.classList.remove('show');
+                modalElement.style.display = 'none';
+                document.body.classList.remove('modal-open');
+                document.querySelectorAll('.modal-backdrop').forEach(function (backdrop) {
+                    backdrop.remove();
+                });
+            }
+            location.reload();
+            return;
+        }
+        alert((result.data && result.data.message) || 'Could not delete this reservation.');
+    })
+    .catch(function () {
+        alert('Could not delete this reservation. Please try again.');
     });
 }
 </script>

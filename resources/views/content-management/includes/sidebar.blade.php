@@ -24,7 +24,7 @@ $isEventsPageAdmin = $currentRoute === 'eventsPage' || str_contains(strtolower((
                     @if(auth()->user()->isSuperAdmin())
                         <span class="badge bg-danger me-1">Super Admin</span>
                     @elseif(auth()->user()->isContentManager())
-                        <span class="badge bg-primary me-1">Content Manager</span>
+                        <span class="badge bg-primary me-1">Admin</span>
                     @endif
                     CMS
                 </span>
@@ -112,9 +112,11 @@ $isEventsPageAdmin = $currentRoute === 'eventsPage' || str_contains(strtolower((
             <a href="{{ route('content-management.hosting.index') }}" class="nav-item nav-link {{ str_contains((string) $currentRoute, 'content-management.hosting') ? 'active' : '' }}">
                 <i class="fas fa-file-invoice me-2"></i>Hosting
             </a>
+            @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('setting') }}" class="nav-item nav-link {{ in_array($currentRoute, ['setting', 'saveSetting', 'homePage', 'saveHome', 'aboutPage', 'saveAbout'], true) || str_starts_with((string) $currentRoute, 'setting.') ? 'active' : '' }}">
                 <i class="fas fa-cog me-2"></i>Settings
             </a>
+            @endif
             <a href="{{ route('logouts') }}" class="nav-item nav-link">
                 <i class="fas fa-sign-out-alt me-2"></i>Logout
             </a>

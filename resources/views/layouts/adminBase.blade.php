@@ -103,49 +103,51 @@
         function forceCloseModal(modalEl) {
             if (!modalEl) return;
 
-            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                var bsInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
-                if (bsInstance) {
-                    bsInstance.hide();
-                    return;
+            try {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    var Modal = bootstrap.Modal;
+                    var bsInstance = typeof Modal.getInstance === 'function' ? Modal.getInstance(modalEl) : null;
+                    if (!bsInstance && typeof Modal.getOrCreateInstance === 'function') {
+                        bsInstance = Modal.getOrCreateInstance(modalEl);
+                    }
+                    if (bsInstance && typeof bsInstance.hide === 'function') {
+                        bsInstance.hide();
+                    }
                 }
-            }
+            } catch (e) {}
 
-            if (typeof jQuery !== 'undefined' && jQuery(modalEl).modal) {
-                jQuery(modalEl).modal('hide');
-                return;
-            }
+            try {
+                if (typeof jQuery !== 'undefined' && jQuery.fn && typeof jQuery.fn.modal === 'function') {
+                    jQuery(modalEl).modal('hide');
+                }
+            } catch (e) {}
 
             modalEl.classList.remove('show');
             modalEl.style.display = 'none';
             modalEl.setAttribute('aria-hidden', 'true');
+            modalEl.removeAttribute('aria-modal');
+            modalEl.removeAttribute('role');
             document.body.classList.remove('modal-open');
             document.body.style.removeProperty('overflow');
             document.body.style.removeProperty('padding-right');
-            var backdrops = document.querySelectorAll('.modal-backdrop');
-            backdrops.forEach(function(b) { b.remove(); });
+            document.querySelectorAll('.modal-backdrop').forEach(function (backdrop) {
+                backdrop.remove();
+            });
         }
 
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             var trigger = e.target.closest(
                 '[data-bs-dismiss="modal"], [data-dismiss="modal"], .modal .btn-close, .modal .close'
             );
             if (!trigger) return;
 
-            var modalEl = trigger.closest ? trigger.closest('.modal') : null;
+            var modalEl = trigger.closest('.modal');
             if (!modalEl) return;
 
-            if (
-                !trigger.hasAttribute('data-bs-dismiss')
-                && !trigger.hasAttribute('data-dismiss')
-                && !trigger.classList.contains('btn-close')
-                && !trigger.classList.contains('close')
-            ) {
-                return;
-            }
-
+            e.preventDefault();
+            e.stopPropagation();
             forceCloseModal(modalEl);
-        });
+        }, true);
     })();
     </script>
 

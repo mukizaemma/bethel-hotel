@@ -127,15 +127,20 @@
                         <select class="form-control form-select" id="user_role_id" name="role_id" required>
                             <option value="">-- Select Role --</option>
                             @foreach($roles as $role)
+                            @php
+                                $roleNote = match ($role->slug) {
+                                    'super-admin' => 'Full access, including Settings and System Users',
+                                    'admin' => 'Same access as Super Admin, except Settings and System Users',
+                                    'guest' => 'No access to the admin dashboard',
+                                    default => $role->description,
+                                };
+                            @endphp
                             <option value="{{ $role->id }}" data-role-name="{{ $role->name }}">
-                                {{ $role->name }}
-                                @if($role->description)
-                                    — {{ $role->description }}
-                                @endif
+                                {{ $role->name }}@if($roleNote) — {{ $roleNote }}@endif
                             </option>
                             @endforeach
                         </select>
-                        <small class="form-text text-muted">Super Admin can manage users. Admin can edit website content. Normal User cannot open the admin dashboard.</small>
+                        <small class="form-text text-muted">Super Admin can open Settings and System Users. Admin can use every other part of the dashboard. Normal User cannot open the admin dashboard.</small>
                     </div>
                     <div class="mb-3" id="verifyImmediatelyContainer">
                         <div class="form-check form-switch">

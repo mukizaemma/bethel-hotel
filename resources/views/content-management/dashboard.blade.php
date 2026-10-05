@@ -35,7 +35,7 @@
         </div>
         @elseif(auth()->user()->isContentManager())
         <div class="alert alert-primary alert-dismissible fade show" role="alert">
-            <strong><i class="fa fa-user-cog me-2"></i>Content Manager Dashboard:</strong> You have access to manage website content including services, rooms, facilities, gallery, and page settings.
+            <strong><i class="fa fa-user-cog me-2"></i>Admin:</strong> You can manage the website the same way a super admin can, except Settings and System Users.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif

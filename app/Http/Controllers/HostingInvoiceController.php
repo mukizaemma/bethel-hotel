@@ -41,7 +41,7 @@ class HostingInvoiceController extends Controller
 
     public function markPaid(HostingInvoice $invoice, HostingRenewal $renewal)
     {
-        abort_unless(auth()->user()?->isSuperAdmin(), 403);
+        abort_unless(auth()->user()?->isAdmin(), 403);
 
         if ($invoice->isPaid()) {
             return redirect()

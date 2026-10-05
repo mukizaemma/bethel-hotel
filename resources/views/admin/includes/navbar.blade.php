@@ -47,10 +47,12 @@
                 {{-- <a href="{{ route('aboutPage') }}" class="dropdown-item">
                     <i class="fa fa-user me-2"></i>My Profile
                 </a> --}}
+                @if(auth()->user()->isSuperAdmin())
                 <a href="{{ route('setting') }}" class="dropdown-item">
                     <i class="fa fa-cog me-2"></i>Settings
                 </a>
                 <div class="dropdown-divider"></div>
+                @endif
                 <a href="{{ route('logouts') }}" class="dropdown-item">
                     <i class="fa fa-sign-out-alt me-2"></i>Log Out
                 </a>

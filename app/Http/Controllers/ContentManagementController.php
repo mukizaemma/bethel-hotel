@@ -58,7 +58,11 @@ class ContentManagementController extends Controller
             ->take(200)
             ->get();
 
-        return view('content-management.reservations.index', compact('roomReservations', 'facilityReservations'));
+        return view('content-management.reservations.index', [
+            'roomReservations' => $roomReservations,
+            'facilityReservations' => $facilityReservations,
+            'canDeleteReservations' => auth()->user()?->isSuperAdmin() ?? false,
+        ]);
     }
 
     /**
@@ -150,6 +154,34 @@ class ContentManagementController extends Controller
         }
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Super admin removes a reservation from the list.
+     */
+    public function destroyReservation($id)
+    {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403);
+
+        $booking = Booking::findOrFail($id);
+
+        BookingTrash::create([
+            'original_booking_id' => $booking->id,
+            'names' => $booking->names,
+            'email' => $booking->email,
+            'phone' => $booking->phone,
+            'reservation_type' => $booking->reservation_type,
+            'status' => $booking->status,
+            'payload' => $booking->toArray(),
+        ]);
+
+        $booking->delete();
+
+        if (request()->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Reservation deleted.']);
+        }
+
+        return redirect()->back()->with('success', 'Reservation deleted.');
     }
 
     // Hotel Contacts Management

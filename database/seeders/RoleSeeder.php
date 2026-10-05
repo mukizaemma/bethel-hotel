@@ -22,7 +22,7 @@ class RoleSeeder extends Seeder
             [
                 'name' => 'Admin',
                 'slug' => 'admin',
-                'description' => 'CRUD all website content; no user management access',
+                'description' => 'Same access as Super Admin, except Settings and System Users',
             ],
             [
                 'name' => 'Normal User',

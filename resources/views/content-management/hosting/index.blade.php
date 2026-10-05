@@ -121,7 +121,7 @@
                                     </td>
                                     <td class="text-nowrap">
                                         <a class="btn btn-sm btn-outline-primary" href="{{ route('content-management.hosting.show', $invoice) }}">View / print</a>
-                                        @if(auth()->user()->isSuperAdmin() && ! $invoice->isPaid())
+                                        @if(auth()->user()->isAdmin() && ! $invoice->isPaid())
                                             <form action="{{ route('content-management.hosting.paid', $invoice) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirm this invoice as paid?');">
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-success">Mark paid</button>

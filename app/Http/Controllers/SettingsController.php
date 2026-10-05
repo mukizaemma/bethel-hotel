@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\File;
 class SettingsController extends Controller
 {
     public function setting(){
+        $this->ensureSuperAdminSettings();
         $data = Setting::first();
         $setting = Setting::first();
         if($data===null)
@@ -42,6 +43,7 @@ class SettingsController extends Controller
 
 
     public function saveSetting(Request $request){
+        $this->ensureSuperAdminSettings();
         $request->merge([
             'star_rating' => $request->filled('star_rating') ? (int) $request->input('star_rating') : null,
         ]);
@@ -101,6 +103,7 @@ class SettingsController extends Controller
      */
     public function updateFooterDeliveredBy(Request $request)
     {
+        $this->ensureSuperAdminSettings();
         if (! Auth::check() || strtolower((string) Auth::user()->email) !== 'admin@iremetech.com') {
             abort(403);
         }
@@ -135,6 +138,7 @@ class SettingsController extends Controller
      */
     public function saveChannelLinks(Request $request)
     {
+        $this->ensureSuperAdminSettings();
         $validated = $request->validate([
             'booking_com_url' => 'nullable|string|max:4000',
             'booking_com_review_score' => 'nullable|numeric|min:0|max:10',
@@ -204,6 +208,7 @@ class SettingsController extends Controller
      */
     public function updateKeywords(Request $request)
     {
+        $this->ensureSuperAdminSettings();
         $request->validate(['keywords' => 'nullable|string']);
         $setting = Setting::first();
         if (!$setting) {
@@ -362,5 +367,12 @@ class SettingsController extends Controller
         $data->update();
 
         return redirect()->back()->with('success', 'Terms and policies has been updated successfully');
+    }
+
+    private function ensureSuperAdminSettings(): void
+    {
+        if (! auth()->user()?->isSuperAdmin()) {
+            abort(403, 'Only a super admin can open Settings.');
+        }
     }
 }

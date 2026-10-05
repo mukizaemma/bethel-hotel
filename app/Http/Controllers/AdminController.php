@@ -80,6 +80,7 @@ class AdminController extends Controller
     }
 
     public function users(){
+        abort_unless(auth()->user()?->isSuperAdmin(), 403);
         $users = User::all();
         $setting = Setting::first();
         return view('admin.users',[
@@ -89,6 +90,7 @@ class AdminController extends Controller
     }
 
     public function makeAdmin($id){
+        abort_unless(auth()->user()?->isSuperAdmin(), 403);
         $user = User::find($id);
         $user->role = 1;
         $user->save();
@@ -99,6 +101,7 @@ class AdminController extends Controller
     
     public function deleteUser($id)
     {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403);
         $post = User::findOrFail($id);
         $post->delete();
 
