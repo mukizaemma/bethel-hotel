@@ -3,7 +3,7 @@
     'setting' => null,
     'eyebrow' => 'Plan your stay',
     'title' => 'Book or enquire',
-    'lead' => 'Send us your dates and room preference — our team will confirm availability and rates. For instant online booking, use Booking.com (link in contact details).',
+    'lead' => 'Send your dates and room preference on WhatsApp — our team will confirm availability and rates. For instant online booking, use Booking.com (link in contact details).',
     'headingId' => 'booking-cta-heading',
     'showChildrenField' => false,
 ])

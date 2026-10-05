@@ -65,20 +65,18 @@ class ReservationNotifier
      */
     protected static function dispatch(string $channel, Mailable $adminMail, Mailable $guestMail, string $guestEmail, string $whatsappText): array
     {
-        $adminSent = SiteNotificationMail::sendToTeam($adminMail);
-        $guestSent = false;
-        $whatsappUrl = null;
-
         if ($channel === 'whatsapp') {
-            $whatsappUrl = self::webSendUrl($whatsappText);
-        } else {
-            $guestSent = SiteNotificationMail::sendToGuest($guestEmail, $guestMail);
+            return [
+                'admin_sent' => false,
+                'guest_sent' => false,
+                'whatsapp_url' => self::webSendUrl($whatsappText),
+            ];
         }
 
         return [
-            'admin_sent' => $adminSent,
-            'guest_sent' => $guestSent,
-            'whatsapp_url' => $whatsappUrl,
+            'admin_sent' => SiteNotificationMail::sendToTeam($adminMail),
+            'guest_sent' => SiteNotificationMail::sendToGuest($guestEmail, $guestMail),
+            'whatsapp_url' => null,
         ];
     }
 

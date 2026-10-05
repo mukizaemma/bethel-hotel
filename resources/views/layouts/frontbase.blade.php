@@ -453,7 +453,17 @@
                         swalOpts.confirmButtonColor = (swalOpts.icon === 'error') ? '#d33' : '#0048ff';
                     }
                     if (swalOpts.whatsappUrl) {
-                        window.open(swalOpts.whatsappUrl, '_blank', 'noopener,noreferrer');
+                        var alreadyOpened = false;
+                        try {
+                            alreadyOpened = sessionStorage.getItem('bethel-wa-opened') === '1';
+                            sessionStorage.removeItem('bethel-wa-opened');
+                        } catch (e) {}
+                        if (!alreadyOpened) {
+                            var waTab = window.open(swalOpts.whatsappUrl, '_blank');
+                            if (waTab) {
+                                waTab.opener = null;
+                            }
+                        }
                     }
                     Swal.fire(swalOpts);
                 }
@@ -1187,6 +1197,26 @@
     </footer>
     <!-- footer style one end -->
     @endpersist
+    @php
+        $floatWhatsappDigits = \App\Services\ReservationNotifier::whatsappDigits();
+        $floatWhatsappPrefix = trim((string) (\App\Support\HotelChannels::all()['whatsapp_default_message'] ?? ''));
+        $floatWhatsappUrl = $floatWhatsappDigits !== ''
+            ? 'https://web.whatsapp.com/send?phone='.$floatWhatsappDigits.($floatWhatsappPrefix !== '' ? '&text='.rawurlencode($floatWhatsappPrefix) : '')
+            : null;
+    @endphp
+    @if($floatWhatsappUrl)
+        <a
+            href="{{ $floatWhatsappUrl }}"
+            class="bethel-wa-float"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Chat on WhatsApp"
+            data-no-spa-navigate
+        >
+            <i class="fab fa-whatsapp" aria-hidden="true"></i>
+        </a>
+    @endif
+
     <!-- back to top -->
     <button type="button" class="rts__back__top" id="rts-back-to-top">
         <svg width="20" height="20" viewBox="0 0 13 22" fill="none" xmlns="http://www.w3.org/2000/svg">

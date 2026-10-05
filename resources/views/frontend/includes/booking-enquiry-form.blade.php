@@ -24,6 +24,9 @@
     if (! array_key_exists($selectedType, $enquiryTypes) || ($selectedType === 'room' && ! $hasRooms)) {
         $selectedType = 'general';
     }
+    $whatsappDigits = \App\Services\ReservationNotifier::whatsappDigits();
+    $whatsappPrefix = trim((string) (\App\Support\HotelChannels::all()['whatsapp_default_message'] ?? ''));
+    $hotelName = $setting?->company ?? config('app.name', 'Bethel Hotel');
 @endphp
 
 <form
@@ -33,8 +36,12 @@
     action="{{ $formAction }}"
     novalidate
     data-bethel-enquiry-form
+    data-whatsapp-digits="{{ $whatsappDigits }}"
+    data-whatsapp-prefix="{{ $whatsappPrefix }}"
+    data-hotel-name="{{ $hotelName }}"
 >
     @csrf
+    <input type="hidden" name="submit_via" value="whatsapp">
 
     @if($errors->any())
     <div class="home-cta__alert home-cta__alert--error bethel-enquiry-form__alert" role="alert">
@@ -78,7 +85,7 @@
         <div class="col-md-6">
             <label class="home-cta__label" for="{{ $formId }}-email">Email <span class="home-cta__req">*</span></label>
             <input type="email" class="home-cta__input" id="{{ $formId }}-email" name="email" value="{{ old('email') }}" required autocomplete="email" inputmode="email" spellcheck="false" placeholder="name@example.com">
-            <p class="home-cta__form-note mb-0 mt-1">Use an email that can receive mail. Invalid addresses are not saved.</p>
+            <p class="home-cta__form-note mb-0 mt-1">Included in the WhatsApp message so the hotel can reply.</p>
         </div>
         <div class="col-md-6">
             <label class="home-cta__label" for="{{ $formId }}-subject" data-subject-label>
@@ -168,21 +175,14 @@
         </div>
 
         <div class="col-12">
-            <p class="home-cta__label mb-2">How would you like to send this request? <span class="home-cta__req">*</span></p>
             <div class="bethel-enquiry-form__actions">
-                <button type="submit" name="submit_via" value="email" class="theme-btn btn-style fill home-cta__submit bethel-enquiry-form__submit" data-enquiry-submit-email>
-                    <i class="fa-solid fa-envelope home-cta__submit-icon" aria-hidden="true" data-enquiry-email-icon></i>
-                    <span data-enquiry-email-label>Send by email</span>
-                </button>
-                @if(filled(\App\Services\ReservationNotifier::whatsappDigits()))
-                <button type="submit" name="submit_via" value="whatsapp" class="theme-btn btn-style bethel-enquiry-form__submit bethel-enquiry-form__submit--wa" data-enquiry-submit-wa>
+                <button type="submit" class="theme-btn btn-style bethel-enquiry-form__submit bethel-enquiry-form__submit--wa" data-enquiry-submit-wa>
                     <i class="fa-brands fa-whatsapp home-cta__submit-icon" aria-hidden="true"></i>
-                    <span data-enquiry-wa-label>Send via WhatsApp</span>
+                    <span data-enquiry-submit-label>Submit on WhatsApp</span>
                 </button>
-                @endif
             </div>
             <p class="home-cta__form-note bethel-enquiry-form__note mb-0" data-enquiry-note>
-                Choose email to get a confirmation in your inbox, or WhatsApp to continue the request in WhatsApp Web.
+                Submit opens WhatsApp Web in a new tab with your details, addressed to the hotel WhatsApp number.
             </p>
         </div>
     </div>
@@ -223,11 +223,8 @@
         var roomFields = form.querySelectorAll('[data-room-required]');
         var meetingFields = form.querySelectorAll('[data-meetings-required]');
         var diningFields = form.querySelectorAll('[data-dining-required]');
-        var submitEmailLabel = form.querySelector('[data-enquiry-email-label]');
-        var submitEmailIcon = form.querySelector('[data-enquiry-email-icon]');
-        var submitWaLabel = form.querySelector('[data-enquiry-wa-label]');
+        var submitLabel = form.querySelector('[data-enquiry-submit-label]');
         var formNote = form.querySelector('[data-enquiry-note]');
-        var emailInput = form.querySelector('input[name="email"]');
         var checkinInput = form.querySelector('#' + form.id + '-checkin');
         var checkoutInput = form.querySelector('#' + form.id + '-checkout');
 
@@ -295,21 +292,13 @@
                 messageOptional.hidden = messageIsRequired;
             }
 
-            if (submitEmailLabel) {
-                submitEmailLabel.textContent = type === 'room' ? 'Book by email' : 'Send by email';
-            }
-            if (submitEmailIcon) {
-                submitEmailIcon.className = type === 'room'
-                    ? 'fa-solid fa-bed home-cta__submit-icon'
-                    : 'fa-solid fa-envelope home-cta__submit-icon';
-            }
-            if (submitWaLabel) {
-                submitWaLabel.textContent = type === 'room' ? 'Book via WhatsApp' : 'Send via WhatsApp';
+            if (submitLabel) {
+                submitLabel.textContent = type === 'room' ? 'Submit reservation on WhatsApp' : 'Submit on WhatsApp';
             }
             if (formNote) {
                 formNote.textContent = type === 'room'
-                    ? 'Email sends a confirmation to you and the hotel. WhatsApp opens WhatsApp Web in a new tab after your request is saved.'
-                    : 'Email notifies you and the hotel. WhatsApp opens WhatsApp Web in a new tab after your request is saved.';
+                    ? 'Submit opens WhatsApp Web in a new tab with your reservation details, sent to the hotel WhatsApp number.'
+                    : 'Submit opens WhatsApp Web in a new tab with your enquiry, sent to the hotel WhatsApp number.';
             }
 
             if (type === 'room') {
@@ -324,12 +313,142 @@
         typeSelect.addEventListener('change', syncForm);
         syncForm();
 
-        form.addEventListener('submit', function (event) {
-            if (emailInput && !emailInput.checkValidity()) {
+        if (form.dataset.whatsappSubmitBound !== '1') {
+            form.dataset.whatsappSubmitBound = '1';
+            form.addEventListener('submit', function (event) {
                 event.preventDefault();
-                emailInput.reportValidity();
+
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                var digits = String(form.getAttribute('data-whatsapp-digits') || '').replace(/\D/g, '');
+                if (!digits) {
+                    window.alert('WhatsApp is not configured yet. Please call the hotel to complete this request.');
+                    return;
+                }
+
+                var text = buildEnquiryWhatsAppText(form);
+                var url = 'https://web.whatsapp.com/send?phone=' + digits + '&text=' + encodeURIComponent(text);
+                var opened = window.open(url, '_blank');
+                if (opened) {
+                    opened.opener = null;
+                    try { sessionStorage.setItem('bethel-wa-opened', '1'); } catch (e) {}
+                }
+
+                HTMLFormElement.prototype.submit.call(form);
+            });
+        }
+    }
+
+    function enquiryFieldValue(form, name) {
+        var fields = form.querySelectorAll('[name="' + name + '"]');
+        for (var i = 0; i < fields.length; i++) {
+            if (fields[i].disabled) {
+                continue;
             }
-        });
+            var value = (fields[i].value || '').trim();
+            if (value !== '') {
+                return value;
+            }
+        }
+        return '';
+    }
+
+    function enquirySelectedLabel(form, name) {
+        var fields = form.querySelectorAll('[name="' + name + '"]');
+        for (var i = 0; i < fields.length; i++) {
+            if (fields[i].disabled || fields[i].tagName !== 'SELECT') {
+                continue;
+            }
+            var option = fields[i].options[fields[i].selectedIndex];
+            return option ? option.text.trim() : '';
+        }
+        return '';
+    }
+
+    function buildEnquiryWhatsAppText(form) {
+        var prefix = (form.getAttribute('data-whatsapp-prefix') || '').trim();
+        var hotel = form.getAttribute('data-hotel-name') || 'Bethel Hotel';
+        var type = enquiryFieldValue(form, 'enquiry_type');
+        var lines = [prefix || ('Hello ' + hotel + ','), ''];
+
+        if (type === 'room') {
+            lines.push('I would like to request a reservation.');
+        } else {
+            lines.push('I would like to send an enquiry.');
+            var typeLabel = enquirySelectedLabel(form, 'enquiry_type');
+            if (typeLabel) {
+                lines.push('Enquiry type: ' + typeLabel);
+            }
+        }
+
+        lines.push('Name: ' + enquiryFieldValue(form, 'names'));
+        lines.push('Email: ' + enquiryFieldValue(form, 'email'));
+        lines.push('Phone: ' + enquiryFieldValue(form, 'phone'));
+
+        var subject = enquiryFieldValue(form, 'subject');
+        if (subject) {
+            lines.push('Subject: ' + subject);
+        }
+
+        if (type === 'room') {
+            var roomLabel = enquirySelectedLabel(form, 'room_id');
+            if (roomLabel) {
+                lines.push('Room: ' + roomLabel);
+            }
+            var checkin = enquiryFieldValue(form, 'checkin_date');
+            var checkout = enquiryFieldValue(form, 'checkout_date');
+            if (checkin) {
+                lines.push('Check-in: ' + checkin);
+            }
+            if (checkout) {
+                lines.push('Check-out: ' + checkout);
+            }
+            var adults = enquiryFieldValue(form, 'adults');
+            var children = enquiryFieldValue(form, 'children');
+            if (adults) {
+                lines.push('Guests: ' + adults);
+            }
+            if (children && children !== '0') {
+                lines.push('Children: ' + children);
+            }
+        } else if (type === 'meetings') {
+            var meetingDate = enquiryFieldValue(form, 'preferred_date');
+            var guests = enquiryFieldValue(form, 'expected_guests');
+            var days = enquiryFieldValue(form, 'number_of_days');
+            var eventType = enquiryFieldValue(form, 'event_type');
+            if (meetingDate) {
+                lines.push('Preferred date: ' + meetingDate);
+            }
+            if (guests) {
+                lines.push('Expected guests: ' + guests);
+            }
+            if (days) {
+                lines.push('Number of days: ' + days);
+            }
+            if (eventType) {
+                lines.push('Event type: ' + eventType);
+            }
+        } else if (type === 'dining') {
+            var diningDate = enquiryFieldValue(form, 'preferred_date');
+            var partySize = enquiryFieldValue(form, 'party_size');
+            if (diningDate) {
+                lines.push('Preferred date: ' + diningDate);
+            }
+            if (partySize) {
+                lines.push('Party size: ' + partySize);
+            }
+        }
+
+        var message = enquiryFieldValue(form, 'message');
+        if (message) {
+            lines.push('');
+            lines.push(message);
+        }
+
+        return lines.join('\n');
     }
 
     function initAllBethelEnquiryForms() {

@@ -195,7 +195,6 @@ class HomeController extends Controller
             'email' => ['required', 'string', 'max:255', new ValidGuestEmail],
             'phone' => 'required|string|max:20',
             'message' => 'nullable|string|max:1000',
-            'submit_via' => 'required|in:email,whatsapp',
         ];
 
         if ($isFacility) {
@@ -219,11 +218,13 @@ class HomeController extends Controller
 
         $request->validate($rules);
 
-        if ($this->whatsappChannelUnavailable($request->input('submit_via'))) {
+        if ($this->whatsappChannelUnavailable('whatsapp')) {
             return redirect()->back()
-                ->with('error', 'WhatsApp is not available right now. Please submit by email.')
+                ->with('error', 'WhatsApp is not configured yet. Please call the hotel to complete this request.')
                 ->withInput();
         }
+
+        $booking = new Booking();
         $booking->names = $request->input('names');
         $booking->email = strtolower(trim((string) $request->input('email')));
         $booking->phone = $request->input('phone');
@@ -299,18 +300,15 @@ class HomeController extends Controller
 
         if ($booking->save()) {
             $booking->load(['room', 'facility', 'tourActivity']);
-            $channel = (string) $request->input('submit_via', 'email');
-            $notify = ReservationNotifier::notifyBooking($booking, $channel);
+            $notify = ReservationNotifier::notifyBooking($booking, 'whatsapp');
 
             return $this->redirectBackWithContactEmailSwal(
                 redirect()->back(),
                 $notify['admin_sent'],
                 $notify['guest_sent'],
-                $channel === 'email',
+                false,
                 'Booking received',
-                $channel === 'whatsapp'
-                    ? 'Your reservation request was saved. WhatsApp Web will open so you can send the details to the hotel.'
-                    : 'Your reservation request was saved. We will get back to you soon.',
+                'Your reservation details are ready in WhatsApp Web. Send the message to the hotel to complete your request.',
                 $notify['whatsapp_url']
             );
         }
@@ -441,7 +439,6 @@ class HomeController extends Controller
             'names' => 'required|string|max:255',
             'phone' => 'required|string|max:60',
             'email' => ['required', 'string', 'max:255', new ValidGuestEmail],
-            'submit_via' => 'required|in:email,whatsapp',
         ];
 
         if ($enquiryType === 'general') {
@@ -473,9 +470,9 @@ class HomeController extends Controller
 
         $validated = $request->validate($rules);
 
-        if ($this->whatsappChannelUnavailable($validated['submit_via'] ?? 'email')) {
+        if ($this->whatsappChannelUnavailable('whatsapp')) {
             return redirect()->back()
-                ->with('error', 'WhatsApp is not available right now. Please submit by email.')
+                ->with('error', 'WhatsApp is not configured yet. Please call the hotel to complete this request.')
                 ->withInput();
         }
 
@@ -596,34 +593,28 @@ class HomeController extends Controller
             $booking->save();
             $booking->load(['room', 'facility', 'tourActivity']);
 
-            $channel = (string) $validated['submit_via'];
-            $notify = ReservationNotifier::notifyBooking($booking, $channel);
+            $notify = ReservationNotifier::notifyBooking($booking, 'whatsapp');
 
             return $this->redirectBackWithContactEmailSwal(
                 redirect()->back(),
                 $notify['admin_sent'],
                 $notify['guest_sent'],
-                $channel === 'email',
+                false,
                 'Booking received',
-                $channel === 'whatsapp'
-                    ? 'Your room booking request was saved. WhatsApp Web will open so you can send the details to the hotel.'
-                    : 'Your room booking request was saved. We will confirm availability shortly.',
+                'Your reservation details are ready in WhatsApp Web. Send the message to the hotel to complete your request.',
                 $notify['whatsapp_url']
             );
         }
 
-        $channel = (string) $validated['submit_via'];
-        $notify = ReservationNotifier::notifyEnquiry($message, $channel);
+        $notify = ReservationNotifier::notifyEnquiry($message, 'whatsapp');
 
         return $this->redirectBackWithContactEmailSwal(
             redirect()->back(),
             $notify['admin_sent'],
             $notify['guest_sent'],
-            $channel === 'email',
+            false,
             'Message received',
-            $channel === 'whatsapp'
-                ? 'Thank you — your request was saved. WhatsApp Web will open so you can send it to the hotel.'
-                : 'Thank you for reaching out — we will get back to you soon.',
+            'Your enquiry is ready in WhatsApp Web. Send the message to the hotel to complete your request.',
             $notify['whatsapp_url']
         );
     }

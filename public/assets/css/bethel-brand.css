@@ -525,6 +525,33 @@
     color: #fff !important;
 }
 
+.bethel-wa-float {
+    position: fixed;
+    left: 20px;
+    bottom: 24px;
+    z-index: 1002;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #25d366;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    line-height: 1;
+    text-decoration: none;
+    box-shadow: 0 10px 24px rgba(18, 140, 70, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.bethel-wa-float:hover,
+.bethel-wa-float:focus {
+    color: #fff;
+    background: #1ebe57;
+    transform: translateY(-2px);
+}
+
 .bethel-enquiry-form__note {
     margin-top: 0.75rem !important;
 }
