@@ -107,12 +107,6 @@ final class HotelChannels
                 if ($digits !== null && $digits !== '') {
                     return $digits;
                 }
-                $fromReception = $str($s->reception_phone ?? null)
-                    ? preg_replace('/\D+/', '', (string) $s->reception_phone) ?: null
-                    : null;
-                if ($fromReception !== null && $fromReception !== '') {
-                    return $fromReception;
-                }
 
                 return $base['whatsapp_e164'] ?? null;
             })(),

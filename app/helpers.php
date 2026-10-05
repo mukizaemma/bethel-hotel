@@ -18,6 +18,39 @@ if (! function_exists('hotel_price')) {
     }
 }
 
+if (! function_exists('hotel_phone_digits')) {
+    function hotel_phone_digits(?string $value): string
+    {
+        return preg_replace('/\D+/', '', (string) $value) ?: '';
+    }
+}
+
+if (! function_exists('hotel_phone_display')) {
+    /**
+     * Readable phone for public pages. Keeps a number that is already spaced, otherwise groups a Rwanda number.
+     */
+    function hotel_phone_display(?string $value): string
+    {
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return '';
+        }
+        if (preg_match('/[^\d+]/', $raw)) {
+            return $raw;
+        }
+
+        $digits = hotel_phone_digits($raw);
+        if ($digits === '') {
+            return $raw;
+        }
+        if (str_starts_with($digits, '250') && strlen($digits) === 12) {
+            return '+250 '.substr($digits, 3, 3).' '.substr($digits, 6, 3).' '.substr($digits, 9);
+        }
+
+        return '+'.$digits;
+    }
+}
+
 if (! function_exists('price_currency_label')) {
     /**
      * Short label for admin room/pricing forms (Settings → website price currency).

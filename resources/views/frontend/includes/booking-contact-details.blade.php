@@ -2,9 +2,10 @@
     $setting = $setting ?? \App\Models\Setting::first();
     $hc = \App\Models\HotelContact::first();
     $c = \App\Support\HotelChannels::all();
-    $phone = $setting?->reception_phone ?? $hc?->phone ?? $setting?->phone ?? '';
+    $phone = trim((string) ($setting?->reception_phone ?? ''));
     $email = $c['public_email'] ?? $setting?->email ?? $hc?->email ?? '';
-    $waDigits = preg_replace('/\D+/', '', (string) ($c['whatsapp_e164'] ?? ''));
+    $waDigits = hotel_phone_digits($setting?->whatsapp_e164 ?? ($c['whatsapp_e164'] ?? ''));
+    $waLabel = hotel_phone_display($setting?->whatsapp_e164 ?? ($c['whatsapp_e164'] ?? ''));
     $address = '';
     if ($hc) {
         $parts = array_unique(array_filter([$hc->address, $hc->city, $hc->country]));
@@ -42,7 +43,7 @@
         <li>
             <span class="bethel-contact-card__icon bethel-contact-card__icon--wa" aria-hidden="true"><i class="fab fa-whatsapp"></i></span>
             <span class="bethel-contact-card__label">WhatsApp</span>
-            <a href="https://wa.me/{{ $waDigits }}" target="_blank" rel="noopener noreferrer" class="bethel-contact-card__value" data-no-spa-navigate>{{ $phone ?: '+'.$waDigits }}</a>
+            <a href="https://wa.me/{{ $waDigits }}" target="_blank" rel="noopener noreferrer" class="bethel-contact-card__value" data-no-spa-navigate>{{ $waLabel }}</a>
         </li>
         @endif
         @if(filled($address))

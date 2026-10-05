@@ -499,23 +499,9 @@
     @php
         $hotelContactHeader = \App\Models\HotelContact::first();
         $receptionPhoneHeader = trim((string) ($setting?->reception_phone ?? ''));
-        $headerPhone = filled($receptionPhoneHeader)
-            ? $receptionPhoneHeader
-            : ($hotelContactHeader?->phone ?? $setting?->phone ?? '');
         $headerEmail = $hotelContactHeader?->email ?? $setting?->email ?? '';
-        $headerWhatsappDigits = '';
-        if (filled(trim((string) ($setting?->whatsapp_e164 ?? '')))) {
-            $headerWhatsappDigits = preg_replace('/\D+/', '', (string) $setting->whatsapp_e164);
-        } elseif (filled($receptionPhoneHeader)) {
-            $headerWhatsappDigits = preg_replace('/\D+/', '', $receptionPhoneHeader);
-        } elseif ($hotelContactHeader && filled($hotelContactHeader->whatsapp)) {
-            $headerWhatsappDigits = preg_replace('/\D+/', '', $hotelContactHeader->whatsapp);
-        }
-        $headerWhatsappLabel = filled($receptionPhoneHeader)
-            ? $receptionPhoneHeader
-            : (($hotelContactHeader && filled($hotelContactHeader->whatsapp))
-                ? $hotelContactHeader->whatsapp
-                : trim((string) ($setting?->whatsapp_e164 ?? '')));
+        $headerWhatsappDigits = hotel_phone_digits($setting?->whatsapp_e164 ?? '');
+        $headerWhatsappLabel = hotel_phone_display($setting?->whatsapp_e164 ?? '');
         $headerAddress = '';
         if ($hotelContactHeader) {
             $headerAddress = trim(implode(' ', array_filter([
@@ -550,11 +536,11 @@
             <div class="row justify-content-between align-items-center">
                 <div class="col-lg-7 col-md-12">
                     <div class="social__links d-flex align-items-center flex-wrap gap-2">
-                        @if(filled($headerPhone))
-                        <a class="link__item gap-10" href="tel:{{ preg_replace('/\s+/', '', $headerPhone) }}"><i class="flaticon-phone-flip"></i> {{ $headerPhone }}</a>
+                        @if(filled($receptionPhoneHeader))
+                        <a class="link__item gap-10" href="tel:{{ hotel_phone_digits($receptionPhoneHeader) }}"><i class="flaticon-phone-flip"></i> Reception {{ $receptionPhoneHeader }}</a>
                         @endif
                         @if(filled($headerWhatsappDigits))
-                        <a class="link__item gap-10" href="https://wa.me/{{ $headerWhatsappDigits }}" target="_blank" rel="noopener noreferrer" title="WhatsApp"><i class="fab fa-whatsapp" style="color:#25D366"></i> {{ $headerWhatsappLabel }}</a>
+                        <a class="link__item gap-10" href="https://wa.me/{{ $headerWhatsappDigits }}" target="_blank" rel="noopener noreferrer" title="WhatsApp"><i class="fab fa-whatsapp" style="color:#25D366"></i> WhatsApp {{ $headerWhatsappLabel }}</a>
                         @endif
                         @if(filled($headerEmail))
                         <a class="link__item gap-10" href="mailto:{{ $headerEmail }}"><i class="flaticon-envelope"></i> {{ $headerEmail }}</a>
@@ -588,12 +574,18 @@
                         <div class="main__logo">
                             <a wire:navigate href="{{ route('home')}}"><img class="logo__class" src="{{ $brandLogo }}" alt="{{ $setting?->company ?? 'Bethel Hotel' }}" width="110px"></a>
                         </div>
-                        @if((filled($headerPhone) || filled($headerEmail)))
+                        @if(filled($receptionPhoneHeader) || filled($headerWhatsappDigits) || filled($headerEmail))
                         <div class="main__header__contacts d-flex d-sm-none flex-column justify-content-center gap-1 text-start min-w-0" aria-label="Contact shortcuts">
-                            @if(filled($headerPhone))
-                            <a class="link__item" href="tel:{{ preg_replace('/\s+/', '', $headerPhone) }}">
+                            @if(filled($receptionPhoneHeader))
+                            <a class="link__item" href="tel:{{ hotel_phone_digits($receptionPhoneHeader) }}">
                                 <i class="fas fa-phone main__header__contacts-icon" aria-hidden="true"></i>
-                                <span class="text-truncate">{{ $headerPhone }}</span>
+                                <span class="text-truncate">Reception {{ $receptionPhoneHeader }}</span>
+                            </a>
+                            @endif
+                            @if(filled($headerWhatsappDigits))
+                            <a class="link__item" href="https://wa.me/{{ $headerWhatsappDigits }}" target="_blank" rel="noopener noreferrer">
+                                <i class="fab fa-whatsapp main__header__contacts-icon" aria-hidden="true" style="color:#25D366"></i>
+                                <span class="text-truncate">WhatsApp {{ $headerWhatsappLabel }}</span>
                             </a>
                             @endif
                             @if(filled($headerEmail))
@@ -1029,10 +1021,9 @@
                         <span class="widget__title">Contact Us</span>
                         @php
                             $ftHotel = \App\Models\HotelContact::first();
-                            $receptionPhone  = $setting?->reception_phone ?? null;
-                            $managerPhone    = $setting?->manager_phone ?? null;
-                            $restaurantPhone = $setting?->restaurant_phone ?? null;
-                            $mainPhone = $ftHotel?->phone ?? $setting?->phone ?? '';
+                            $receptionPhone  = trim((string) ($setting?->reception_phone ?? ''));
+                            $whatsappDigits = hotel_phone_digits($setting?->whatsapp_e164 ?? '');
+                            $whatsappLabel = hotel_phone_display($setting?->whatsapp_e164 ?? '');
                             $mainEmail = $ftHotel?->email ?? $setting?->email ?? '';
                             $ftAddr = '';
                             if ($ftHotel) {
@@ -1065,58 +1056,19 @@
                             }
                         @endphp
                         <ul class="footer-contact-list">
-                            @if($receptionPhone)
+                            @if(filled($receptionPhone))
                                 <li>
-                                    <a href="tel:{{ preg_replace('/\s+/', '', $receptionPhone) }}" class="footer-contact-list__a">
+                                    <a href="tel:{{ hotel_phone_digits($receptionPhone) }}" class="footer-contact-list__a">
                                         <span class="footer-contact-list__icon" aria-hidden="true"><i class="fa-solid fa-phone"></i></span>
                                         <span><span class="footer-contact-list__muted">Reception</span> {{ $receptionPhone }}</span>
                                     </a>
                                 </li>
                             @endif
-                            @if($managerPhone)
+                            @if(filled($whatsappDigits))
                                 <li>
-                                    <a href="tel:{{ preg_replace('/\s+/', '', $managerPhone) }}" class="footer-contact-list__a">
-                                        <span class="footer-contact-list__icon" aria-hidden="true"><i class="fa-solid fa-phone"></i></span>
-                                        <span><span class="footer-contact-list__muted">Manager</span> {{ $managerPhone }}</span>
-                                    </a>
-                                </li>
-                            @endif
-                            @if($restaurantPhone)
-                                <li>
-                                    <a href="tel:{{ preg_replace('/\s+/', '', $restaurantPhone) }}" class="footer-contact-list__a">
-                                        <span class="footer-contact-list__icon" aria-hidden="true"><i class="fa-solid fa-phone"></i></span>
-                                        <span><span class="footer-contact-list__muted">Restaurant</span> {{ $restaurantPhone }}</span>
-                                    </a>
-                                </li>
-                            @endif
-                            @if(!$receptionPhone && !$managerPhone && !$restaurantPhone && filled($mainPhone))
-                                <li>
-                                    <a href="tel:{{ preg_replace('/\s+/', '', $mainPhone) }}" class="footer-contact-list__a">
-                                        <span class="footer-contact-list__icon" aria-hidden="true"><i class="fa-solid fa-phone"></i></span>
-                                        <span>{{ $mainPhone }}</span>
-                                    </a>
-                                </li>
-                            @endif
-                            @php
-                                $footerWhatsappDigits = '';
-                                if (filled(trim((string) ($setting->whatsapp_e164 ?? '')))) {
-                                    $footerWhatsappDigits = preg_replace('/\D+/', '', (string) $setting->whatsapp_e164);
-                                } elseif (filled(trim((string) ($setting->reception_phone ?? '')))) {
-                                    $footerWhatsappDigits = preg_replace('/\D+/', '', (string) $setting->reception_phone);
-                                } elseif ($ftHotel && filled($ftHotel->whatsapp)) {
-                                    $footerWhatsappDigits = preg_replace('/\D+/', '', $ftHotel->whatsapp);
-                                }
-                                $footerWhatsappLabel = filled(trim((string) ($setting->reception_phone ?? '')))
-                                    ? trim((string) $setting->reception_phone)
-                                    : (($ftHotel && filled($ftHotel->whatsapp))
-                                        ? $ftHotel->whatsapp
-                                        : trim((string) ($setting->whatsapp_e164 ?? '')));
-                            @endphp
-                            @if(filled($footerWhatsappDigits))
-                                <li>
-                                    <a href="https://wa.me/{{ $footerWhatsappDigits }}" target="_blank" rel="noopener noreferrer" class="footer-contact-list__a">
+                                    <a href="https://wa.me/{{ $whatsappDigits }}" target="_blank" rel="noopener noreferrer" class="footer-contact-list__a">
                                         <span class="footer-contact-list__icon footer-contact-list__icon--wa" aria-hidden="true"><i class="fab fa-whatsapp"></i></span>
-                                        <span>{{ $footerWhatsappLabel }}</span>
+                                        <span><span class="footer-contact-list__muted">WhatsApp</span> {{ $whatsappLabel }}</span>
                                     </a>
                                 </li>
                             @endif

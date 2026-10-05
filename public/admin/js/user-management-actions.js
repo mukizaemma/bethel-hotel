@@ -36,13 +36,27 @@
 
     function showModal(modalEl) {
         if (!modalEl) return;
-        var bs = modalInstance(modalEl);
-        if (bs && typeof bs.show === 'function') {
-            bs.show();
-            return;
+        if (typeof jQuery !== 'undefined' && jQuery.fn && typeof jQuery.fn.modal === 'function') {
+            try {
+                jQuery(modalEl).modal('show');
+                return;
+            } catch (e) {}
         }
-        if (typeof jQuery !== 'undefined' && jQuery.fn.modal) {
-            jQuery(modalEl).modal('show');
+        try {
+            var bs = modalInstance(modalEl);
+            if (bs && typeof bs.show === 'function') {
+                bs.show();
+                return;
+            }
+        } catch (e) {}
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+        modalEl.removeAttribute('aria-hidden');
+        document.body.classList.add('modal-open');
+        if (!document.querySelector('.modal-backdrop')) {
+            var backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            document.body.appendChild(backdrop);
         }
     }
 
@@ -106,41 +120,24 @@
         var c = cfg();
 
         if (action === 'edit') {
-            var showUrl = c.dataset.urlShow.replace('__ID__', id);
-            fetch(showUrl, {
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            })
-                .then(function (r) {
-                    if (!r.ok) {
-                        throw new Error('HTTP ' + r.status);
-                    }
-                    return r.json();
-                })
-                .then(function (data) {
-                    window.__userMgmtCurrentUserId = id;
-                    document.getElementById('user_id').value = data.id;
-                    document.getElementById('user_name').value = data.name;
-                    document.getElementById('user_email').value = data.email;
-                    document.getElementById('user_role_id').value = data.role_id || '';
-                    document.getElementById('user_password').required = false;
-                    document.getElementById('passwordLabel').textContent =
-                        '(leave blank to keep current)';
-                    document.getElementById('userModalTitle').textContent = 'Edit User';
-                    var vic = document.getElementById('verifyImmediatelyContainer');
-                    if (vic) vic.style.display = 'none';
-
-                    showModal(document.getElementById('userModal'));
-                })
-                .catch(function (err) {
-                    if (String((err && err.message) || '').indexOf('403') !== -1) {
-                        alert('You are not allowed to edit this user with the current account.');
-                        return;
-                    }
-                    alert('Could not load user. Please refresh and try again.');
-                });
+            e.preventDefault();
+            var form = document.getElementById('userForm');
+            if (!form || !document.getElementById('user_name')) {
+                alert('The edit form is missing. Refresh the page and try again.');
+                return;
+            }
+            window.__userMgmtCurrentUserId = id;
+            document.getElementById('user_id').value = id;
+            document.getElementById('user_name').value = btn.getAttribute('data-user-name') || '';
+            document.getElementById('user_email').value = btn.getAttribute('data-user-email') || '';
+            document.getElementById('user_role_id').value = btn.getAttribute('data-user-role-id') || '';
+            document.getElementById('user_password').required = false;
+            document.getElementById('user_password').value = '';
+            document.getElementById('passwordLabel').textContent = '(leave blank to keep current)';
+            document.getElementById('userModalTitle').textContent = 'Edit User';
+            var vic = document.getElementById('verifyImmediatelyContainer');
+            if (vic) vic.style.display = 'none';
+            showModal(document.getElementById('userModal'));
             return;
         }
 

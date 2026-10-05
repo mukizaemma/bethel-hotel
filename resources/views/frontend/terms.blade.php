@@ -91,14 +91,25 @@
                     If you have any questions regarding our terms and conditions, please don't hesitate to contact us.
                 </p>
                 <div class="row g-4 justify-content-center">
-                    @if($setting && $setting?->phone)
+                    @if($setting && filled($setting?->reception_phone))
                     <div class="col-md-4">
                         <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.08);">
                             <div style="width: 50px; height: 50px; background: #0048ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
                                 <i class="fa fa-phone" style="color: white; font-size: 20px;"></i>
                             </div>
-                            <h6 style="font-weight: 600; margin-bottom: 8px; color: #1a1a1a;">Phone</h6>
-                            <p style="color: #666; margin: 0; font-size: 0.95rem;">{{ $setting?->phone }}</p>
+                            <h6 style="font-weight: 600; margin-bottom: 8px; color: #1a1a1a;">Reception</h6>
+                            <p style="color: #666; margin: 0; font-size: 0.95rem;"><a href="tel:{{ hotel_phone_digits($setting->reception_phone) }}">{{ $setting->reception_phone }}</a></p>
+                        </div>
+                    </div>
+                    @endif
+                    @if($setting && filled(hotel_phone_digits($setting?->whatsapp_e164 ?? '')))
+                    <div class="col-md-4">
+                        <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.08);">
+                            <div style="width: 50px; height: 50px; background: #25D366; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                                <i class="fab fa-whatsapp" style="color: white; font-size: 20px;"></i>
+                            </div>
+                            <h6 style="font-weight: 600; margin-bottom: 8px; color: #1a1a1a;">WhatsApp</h6>
+                            <p style="color: #666; margin: 0; font-size: 0.95rem;"><a href="https://wa.me/{{ hotel_phone_digits($setting->whatsapp_e164) }}" target="_blank" rel="noopener noreferrer">{{ hotel_phone_display($setting->whatsapp_e164) }}</a></p>
                         </div>
                     </div>
                     @endif

@@ -55,10 +55,9 @@ class SettingsController extends Controller
         $data = Setting::first();
         $data->company = $request->input('company');
         $data->address = $request->input('address');
-        $data->phone = $request->input('phone');
         $data->reception_phone = $request->input('reception_phone');
-        $data->manager_phone = $request->input('manager_phone');
-        $data->restaurant_phone = $request->input('restaurant_phone');
+        $whatsappDigits = hotel_phone_digits($request->input('whatsapp_e164'));
+        $data->whatsapp_e164 = $whatsappDigits !== '' ? $whatsappDigits : null;
         $data->email = $request->input('email');
         $data->facebook = $request->input('facebook');
         $data->instagram = $request->input('instagram');
@@ -87,6 +86,7 @@ class SettingsController extends Controller
         }
 
         $saved = $data->update();
+        HotelChannels::forgetCache();
 
         if($saved){
             return redirect()->back()->with('success', 'Setting has been updated successfully');
@@ -153,7 +153,6 @@ class SettingsController extends Controller
             'google_review_count' => 'nullable|integer|min:0|max:99999999',
             'google_review_summary' => 'nullable|string|max:2000',
             'google_write_review_url' => 'nullable|string|max:4000',
-            'whatsapp_e164' => 'nullable|string|max:32',
             'whatsapp_default_message' => 'nullable|string|max:2000',
             'channel_contact_email' => 'nullable|email|max:255',
         ]);
@@ -181,7 +180,6 @@ class SettingsController extends Controller
             'google_review_count',
             'google_review_summary',
             'google_write_review_url',
-            'whatsapp_e164',
             'whatsapp_default_message',
             'channel_contact_email',
         ] as $key) {

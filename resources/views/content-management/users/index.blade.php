@@ -74,7 +74,7 @@
                                         <i class="fa fa-envelope"></i>
                                     </button>
                                     @endif
-                                    <button type="button" class="btn btn-sm btn-warning" data-user-action="edit" data-user-id="{{ $user->id }}" title="Edit User">
+                                    <button type="button" class="btn btn-sm btn-warning" data-user-action="edit" data-user-id="{{ $user->id }}" data-user-name="{{ $user->name }}" data-user-email="{{ $user->email }}" data-user-role-id="{{ $user->role_id }}" title="Edit User">
                                         <i class="fa fa-edit"></i>
                                     </button>
                                     <button type="button" class="btn btn-sm btn-secondary" data-user-action="reset-password" data-user-id="{{ $user->id }}" title="Reset Password">

@@ -201,8 +201,19 @@ class UserManagementController extends Controller
     {
         $this->ensureManageAllUsersOrAbort();
 
-        $user = User::with('role')->findOrFail($id);
-        return response()->json($user);
+        $user = User::with('role:id,name,slug')->findOrFail($id);
+
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role_id' => $user->role_id,
+            'role' => $user->role ? [
+                'id' => $user->role->id,
+                'name' => $user->role->name,
+                'slug' => $user->role->slug,
+            ] : null,
+        ]);
     }
 
     /**

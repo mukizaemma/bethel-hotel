@@ -41,9 +41,6 @@
                             $hcHero = $hotelContact ?? \App\Models\HotelContact::first();
                             $stHero = $setting ?? \App\Models\Setting::first();
                             $heroReception = trim((string) ($stHero?->reception_phone ?? ''));
-                            $heroPhone = filled($heroReception)
-                                ? $heroReception
-                                : ($hcHero?->phone ?? $stHero?->phone ?? '');
                             $heroEmail = $hcHero?->email ?? $stHero?->email ?? '';
                             $heroSocialLinks = array_values(array_filter(
                                 [
@@ -58,29 +55,18 @@
                                 }
                             ));
                             $heroHasSocial = count($heroSocialLinks) > 0;
-                            $heroWhatsappDigits = '';
-                            if (filled(trim((string) ($stHero?->whatsapp_e164 ?? '')))) {
-                                $heroWhatsappDigits = preg_replace('/\D+/', '', (string) $stHero->whatsapp_e164);
-                            } elseif (filled($heroReception)) {
-                                $heroWhatsappDigits = preg_replace('/\D+/', '', $heroReception);
-                            } elseif ($hcHero && filled($hcHero->whatsapp)) {
-                                $heroWhatsappDigits = preg_replace('/\D+/', '', $hcHero->whatsapp);
-                            }
-                            $heroWhatsappLabel = filled($heroReception)
-                                ? $heroReception
-                                : (($hcHero && filled($hcHero->whatsapp))
-                                    ? $hcHero->whatsapp
-                                    : trim((string) ($stHero?->whatsapp_e164 ?? '')));
-                            $heroShowBlock = filled($heroPhone) || filled($heroEmail) || filled($heroWhatsappDigits) || $heroHasSocial;
+                            $heroWhatsappDigits = hotel_phone_digits($stHero?->whatsapp_e164 ?? '');
+                            $heroWhatsappLabel = hotel_phone_display($stHero?->whatsapp_e164 ?? '');
+                            $heroShowBlock = filled($heroReception) || filled($heroEmail) || filled($heroWhatsappDigits) || $heroHasSocial;
                         @endphp
                         @if($heroShowBlock)
                             <div class="page__hero__contacts wow fadeInUp" data-wow-delay="0.12s">
                                 <div class="page__hero__contacts-row">
-                                    @if(filled($heroPhone))
-                                        <a href="tel:{{ preg_replace('/\s+/', '', $heroPhone) }}"><i class="flaticon-phone-flip" aria-hidden="true"></i><span>{{ $heroPhone }}</span></a>
+                                    @if(filled($heroReception))
+                                        <a href="tel:{{ hotel_phone_digits($heroReception) }}"><i class="flaticon-phone-flip" aria-hidden="true"></i><span>Reception {{ $heroReception }}</span></a>
                                     @endif
                                     @if(filled($heroWhatsappDigits))
-                                        <a href="https://wa.me/{{ $heroWhatsappDigits }}" target="_blank" rel="noopener noreferrer" title="WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true"></i><span>{{ $heroWhatsappLabel }}</span></a>
+                                        <a href="https://wa.me/{{ $heroWhatsappDigits }}" target="_blank" rel="noopener noreferrer" title="WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true"></i><span>WhatsApp {{ $heroWhatsappLabel }}</span></a>
                                     @endif
                                     @if(filled($heroEmail))
                                         <a href="mailto:{{ $heroEmail }}"><i class="flaticon-envelope" aria-hidden="true"></i><span>{{ $heroEmail }}</span></a>

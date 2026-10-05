@@ -83,41 +83,31 @@
                                         <input type="text" class="form-control" id="address" name="address" value="{{ $data->address }}">
                                     </div>
                                     <div class="col-md-6">
-                                        <label for="phone" class="form-label">Phone</label>
-                                        <input type="text" class="form-control" id="phone" name="phone" value="{{ $data->phone }}">
-                                    </div>
-                                    <div class="col-md-6">
                                         <label for="email" class="form-label">Email</label>
                                         <input type="email" class="form-control" id="email" name="email" value="{{ $data->email }}">
                                     </div>
-                                </div>
-                                <div class="row g-3 mt-1">
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label for="reception_phone" class="form-label">Reception phone</label>
                                         <input
                                             type="text"
                                             class="form-control"
                                             id="reception_phone"
                                             name="reception_phone"
-                                            value="{{ old('reception_phone', $data->reception_phone ?? '') }}">
+                                            value="{{ old('reception_phone', $data->reception_phone ?? '') }}"
+                                            placeholder="+250 782 166 233">
+                                        <p class="text-muted small mb-0 mt-1">Shown on the website as Reception. Guests call this number.</p>
                                     </div>
-                                    <div class="col-md-4">
-                                        <label for="manager_phone" class="form-label">Manager phone</label>
+                                    <div class="col-md-6">
+                                        <label for="whatsapp_e164" class="form-label">WhatsApp number</label>
                                         <input
                                             type="text"
                                             class="form-control"
-                                            id="manager_phone"
-                                            name="manager_phone"
-                                            value="{{ old('manager_phone', $data->manager_phone ?? '') }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="restaurant_phone" class="form-label">Restaurant phone</label>
-                                        <input
-                                            type="text"
-                                            class="form-control"
-                                            id="restaurant_phone"
-                                            name="restaurant_phone"
-                                            value="{{ old('restaurant_phone', $data->restaurant_phone ?? '') }}">
+                                            id="whatsapp_e164"
+                                            name="whatsapp_e164"
+                                            value="{{ old('whatsapp_e164', hotel_phone_display($data->whatsapp_e164 ?? '')) }}"
+                                            placeholder="+250 782 166 233"
+                                            maxlength="32">
+                                        <p class="text-muted small mb-0 mt-1">Shown on the website as WhatsApp. Enquiry and reservation forms open a chat to this number.</p>
                                     </div>
                                 </div>
                             </fieldset>
@@ -339,13 +329,8 @@
                                 </div>
                             </fieldset>
                             <fieldset class="mb-0">
-                                <legend class="h6 text-secondary border-bottom pb-2 mb-3">WhatsApp &amp; email (CTAs)</legend>
+                                <legend class="h6 text-secondary border-bottom pb-2 mb-3">Email on buttons</legend>
                                 <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label" for="whatsapp_e164">WhatsApp number</label>
-                                        <input type="text" class="form-control" id="whatsapp_e164" name="whatsapp_e164" value="{{ old('whatsapp_e164', $data->whatsapp_e164 ?? '') }}" placeholder="250794191115" maxlength="32">
-                                        <p class="text-muted small mb-0 mt-1">Digits only, with country code (no +).</p>
-                                    </div>
                                     <div class="col-md-6">
                                         <label class="form-label" for="channel_contact_email">Contact email for mailto links</label>
                                         <input type="email" class="form-control" id="channel_contact_email" name="channel_contact_email" value="{{ old('channel_contact_email', $data->channel_contact_email ?? '') }}" placeholder="Leave empty to use main Email above">
@@ -353,6 +338,7 @@
                                     <div class="col-12">
                                         <label class="form-label" for="whatsapp_default_message">Default WhatsApp message prefix</label>
                                         <textarea class="form-control" id="whatsapp_default_message" name="whatsapp_default_message" rows="2" maxlength="2000">{{ old('whatsapp_default_message', $data->whatsapp_default_message ?? '') }}</textarea>
+                                        <p class="text-muted small mb-0 mt-1">The WhatsApp number itself is set under Contacts &amp; Logo.</p>
                                     </div>
                                 </div>
                             </fieldset>
