@@ -296,7 +296,7 @@ class ContentManagementController extends Controller
     // System Users Panel (Super Admin only)
     public function users()
     {
-        $users = User::with('role')->latest()->get();
+        $users = User::with('role')->whereNull('deleted_at')->latest()->get();
         $roles = Role::whereIn('slug', ['super-admin', 'admin', 'guest'])->get()
             ->sortBy(fn (Role $role) => match ($role->slug) {
                 'super-admin' => 0,

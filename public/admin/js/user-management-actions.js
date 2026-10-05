@@ -222,7 +222,17 @@
     });
 
     document.addEventListener('submit', function (e) {
-        if (!cfg() || !canManageUsers()) return;
+        if (e.target && (e.target.id === 'userForm' || e.target.id === 'resetPasswordForm')) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        if (!cfg() || !canManageUsers()) {
+            if (e.target && e.target.id === 'userForm') {
+                alert('Only a super admin can add or edit users. Refresh the page and try again.');
+            }
+            return;
+        }
 
         if (e.target.id === 'resetPasswordForm') {
             e.preventDefault();
@@ -268,15 +278,33 @@
 
         if (e.target.id === 'userForm') {
             e.preventDefault();
-            var currentId = window.__userMgmtCurrentUserId;
+            e.stopPropagation();
+            var form = e.target;
+            var title = document.getElementById('userModalTitle');
+            var isEdit = title && title.textContent.indexOf('Edit') === 0;
+            var currentId = isEdit ? (window.__userMgmtCurrentUserId || (document.getElementById('user_id') || {}).value) : '';
+            if (!isEdit) {
+                window.__userMgmtCurrentUserId = null;
+                var idField = document.getElementById('user_id');
+                if (idField) idField.value = '';
+            }
+            var roleSelect = form.querySelector('[name="role_slug"]');
+            var password = document.getElementById('user_password');
+            if (!roleSelect || !roleSelect.value) {
+                alert('Choose a role: Super Admin, Admin, or Normal User.');
+                return;
+            }
+            if (!isEdit && (!password || password.value.length < 8)) {
+                alert('Password must be at least 8 characters.');
+                return;
+            }
             var url = currentId
                 ? cfg().dataset.urlUpdate.replace('__ID__', currentId)
                 : cfg().dataset.urlStore;
-            var fd = new FormData(e.target);
-            var roleSelect = e.target.querySelector('[name="role_slug"]');
-            if (roleSelect) {
-                fd.set('role_slug', roleSelect.value);
-            }
+            var fd = new FormData(form);
+            fd.set('role_slug', roleSelect.value);
+            var saveBtn = form.querySelector('[type="submit"]');
+            if (saveBtn) saveBtn.disabled = true;
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -287,16 +315,18 @@
                 body: fd,
             })
                 .then(function (r) {
-                    return r.json().then(function (data) {
+                    return r.text().then(function (text) {
+                        var data = {};
+                        try {
+                            data = text ? JSON.parse(text) : {};
+                        } catch (err) {
+                            data = { message: 'Could not save this user (server returned an unexpected response).' };
+                        }
                         return { ok: r.ok, data: data };
                     });
                 })
                 .then(function (res) {
-                    if (res.ok && res.data.success) {
-                        try { closeModal('userModal'); } catch (err) {}
-                        window.location.reload();
-                        return;
-                    }
+                    if (saveBtn) saveBtn.disabled = false;
                     var data = res.data || {};
                     var message = data.message;
                     if (!message && data.errors) {
@@ -307,13 +337,20 @@
                             })
                             .join('\n');
                     }
+                    if (res.ok && data.success) {
+                        alert(message || (isEdit ? 'User updated.' : 'User added.'));
+                        try { closeModal('userModal'); } catch (err) {}
+                        window.location.reload();
+                        return;
+                    }
                     alert(message || 'Could not save this user.');
                 })
                 .catch(function () {
+                    if (saveBtn) saveBtn.disabled = false;
                     alert('Could not save this user. Please try again.');
                 });
         }
-    });
+    }, true);
 
     window.__userMgmtCurrentUserId = null;
 })();

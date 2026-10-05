@@ -125,7 +125,8 @@
                 <h5 class="modal-title" id="userModalTitle">Add New User</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" data-dismiss="modal"></button>
             </div>
-            <form id="userForm">
+            <form id="userForm" method="post" action="{{ route('content-management.users.store', [], false) }}" novalidate>
+                @csrf
                 <div class="modal-body">
                     <input type="hidden" id="user_id" name="id">
                     <div class="mb-3">

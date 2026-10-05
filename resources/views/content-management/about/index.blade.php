@@ -138,7 +138,7 @@
             @if(auth()->user()->isSuperAdmin())
             <div id="users" class="tab-pane fade">
                 @php
-                    $users = App\Models\User::with('role')->latest()->get();
+                    $users = App\Models\User::with('role')->whereNull('deleted_at')->latest()->get();
                     $roles = App\Models\Role::whereIn('slug', ['super-admin', 'admin', 'guest'])->get()
                         ->sortBy(fn ($role) => match ($role->slug) {
                             'super-admin' => 0,

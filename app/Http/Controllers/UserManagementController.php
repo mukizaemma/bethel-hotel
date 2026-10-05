@@ -102,7 +102,7 @@ class UserManagementController extends Controller
         $this->ensureCanonicalRoleNames();
 
         $isManager = true;
-        $users = User::with('role')->latest()->get();
+        $users = User::with('role')->whereNull('deleted_at')->latest()->get();
         $roles = Role::whereIn('slug', ['super-admin', 'admin', 'guest'])->get()
             ->sortBy(fn (Role $role) => match ($role->slug) {
                 'super-admin' => 0,
@@ -119,42 +119,81 @@ class UserManagementController extends Controller
     {
         $this->ensureManageAllUsersOrAbort();
 
-        $role = $this->roleFromRequest($request);
+        try {
+            $role = $this->roleFromRequest($request);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'verify_immediately' => 'nullable|boolean',
-        ]);
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255',
+                'password' => 'required|string|min:8',
+                'verify_immediately' => 'nullable|boolean',
+            ]);
 
-        $userData = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role_id' => $role->id,
-            'user_id' => \Ramsey\Uuid\Uuid::uuid4(),
-        ];
+            $email = strtolower(trim((string) $request->email));
+            $existing = DB::table('users')->whereRaw('LOWER(email) = ?', [$email])->first();
 
-        // If Super Admin wants to verify immediately
-        if ($request->has('verify_immediately') && $request->verify_immediately) {
-            $userData['email_verified_at'] = now();
-            $userData['email_verified_by'] = auth()->id();
-        } else {
-            $userData['verification_token'] = Str::random(60);
+            if ($existing && empty($existing->deleted_at)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'That email is already used by '.$existing->name.'. Edit that user, or use a different email.',
+                ], 422);
+            }
+
+            $verifyNow = $request->boolean('verify_immediately');
+            $payload = [
+                'name' => $request->name,
+                'email' => $email,
+                'password' => Hash::make($request->password),
+                'role_id' => $role->id,
+                'updated_at' => now(),
+                'email_verified_at' => $verifyNow ? now() : null,
+                'email_verified_by' => $verifyNow ? auth()->id() : null,
+                'verification_token' => $verifyNow ? null : Str::random(60),
+            ];
+
+            if ($existing) {
+                DB::table('users')->where('id', $existing->id)->update(array_merge($payload, [
+                    'deleted_at' => null,
+                ]));
+                $user = User::findOrFail($existing->id);
+                $message = 'The deleted account was added back';
+            } else {
+                $payload['user_id'] = (string) \Ramsey\Uuid\Uuid::uuid4();
+                $payload['created_at'] = now();
+                $payload['status'] = 'Active';
+                $userId = DB::table('users')->insertGetId($payload);
+                $user = User::findOrFail($userId);
+                $message = 'User created successfully';
+            }
+
+            if (! $verifyNow) {
+                try {
+                    Mail::to($user->email)->send(new EmailVerificationMail($user));
+                    $message .= ' and a verification email was sent.';
+                } catch (\Throwable $e) {
+                    report($e);
+                    $message .= ', but the verification email could not be sent. You can verify the account from the list.';
+                }
+            } else {
+                $message .= ' and verified.';
+            }
+
+            $label = $this->canonicalRoleLabels()[$role->slug] ?? $role->name;
+
+            return response()->json([
+                'success' => true,
+                'message' => $message.' Role is '.$label.'.',
+            ]);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not add this user. '. $e->getMessage(),
+            ], 500);
         }
-
-        $user = User::create($userData);
-
-        // Send verification email only if not verified immediately
-        if (!$user->email_verified_at) {
-            Mail::to($user->email)->send(new EmailVerificationMail($user));
-            $message = 'User created successfully. Verification email sent.';
-        } else {
-            $message = 'User created and verified successfully.';
-        }
-
-        return response()->json(['success' => true, 'message' => $message]);
     }
 
     public function update(Request $request, $id)
@@ -253,7 +292,14 @@ class UserManagementController extends Controller
                 'message' => 'This is the only super admin and cannot be deleted.',
             ], 422);
         }
-        $user->delete();
+        try {
+            $user->delete();
+        } catch (\Throwable $e) {
+            DB::table('users')->where('id', $user->id)->update([
+                'deleted_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         return response()->json(['success' => true, 'message' => 'User deleted successfully']);
     }
