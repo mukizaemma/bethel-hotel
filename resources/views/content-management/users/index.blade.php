@@ -20,7 +20,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h4 class="mb-0">System Users Management</h4>
-                    <small class="text-muted">Assign <strong>Admin</strong> (content only) or <strong>Normal User</strong> (no admin). Super Admin accounts are created via seeding only.</small>
+                    <small class="text-muted">Edit a user to change their name, email, or role: <strong>Super Admin</strong>, <strong>Admin</strong>, or <strong>Normal User</strong>.</small>
                 </div>
                 @if(!empty($isManager))
                 <button type="button" class="btn btn-primary btn-lg" data-open-add-user-modal>
@@ -134,13 +134,8 @@
                                 @endif
                             </option>
                             @endforeach
-                            @if(isset($superAdminRole) && $superAdminRole)
-                            <option value="{{ $superAdminRole->id }}" id="role_option_super_admin" hidden data-role-name="{{ $superAdminRole->name }}">
-                                {{ $superAdminRole->name }} — seeded only; keep or change to Admin / Normal User
-                            </option>
-                            @endif
                         </select>
-                        <small class="form-text text-muted">Super Admin is not listed — use only for the seeded system account.</small>
+                        <small class="form-text text-muted">Super Admin can manage users. Admin can edit website content. Normal User cannot open the admin dashboard.</small>
                     </div>
                     <div class="mb-3" id="verifyImmediatelyContainer">
                         <div class="form-check form-switch">

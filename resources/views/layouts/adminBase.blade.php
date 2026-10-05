@@ -94,7 +94,7 @@
     @stack('scripts')
 
     {{-- System Users (content-management/users): inline scripts in Livewire slots do not run reliably after SPA navigation --}}
-    <script src="{{ asset('admin/js/user-management-actions.js') }}"></script>
+    <script src="{{ asset('admin/js/user-management-actions.js') }}?v={{ @filemtime(public_path('admin/js/user-management-actions.js')) }}"></script>
     <script src="{{ asset('admin/js/media-picker.js') }}"></script>
 
     {{-- Ensure admin modals can be closed via close button (BS4 loads last; close uses jQuery or BS5 API) --}}

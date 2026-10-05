@@ -14,7 +14,7 @@
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#seo">SEO Data</a>
             </li>
-                @if(strtolower((string) auth()->user()->email) === 'admin@iremetech.com')
+                @if(auth()->user()->isSuperAdmin())
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#users">System Users</a>
             </li>
@@ -135,11 +135,18 @@
                     </div>
                 </div>
             </div>
-            @if(strtolower((string) auth()->user()->email) === 'admin@iremetech.com')
+            @if(auth()->user()->isSuperAdmin())
             <div id="users" class="tab-pane fade">
-                @php 
+                @php
                     $users = App\Models\User::with('role')->latest()->get();
-                    $roles = App\Models\Role::all();
+                    $roles = App\Models\Role::whereIn('slug', ['super-admin', 'admin', 'guest'])->get()
+                        ->sortBy(fn ($role) => match ($role->slug) {
+                            'super-admin' => 0,
+                            'admin' => 1,
+                            default => 2,
+                        })
+                        ->values();
+                    $isManager = true;
                 @endphp
                 @include('content-management.users.index')
             </div>

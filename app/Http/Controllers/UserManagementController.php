@@ -15,14 +15,36 @@ class UserManagementController extends Controller
 {
     private function canManageAllUsers(): bool
     {
-        return auth()->check() && strtolower((string) auth()->user()->email) === 'admin@iremetech.com';
+        return auth()->check() && auth()->user()->isSuperAdmin();
     }
 
     private function ensureManageAllUsersOrAbort(): void
     {
         if (! $this->canManageAllUsers()) {
-            abort(403, 'Only admin@iremetech.com can manage users.');
+            abort(403, 'Only a super admin can manage users.');
         }
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function assignableRoleIds(): array
+    {
+        return Role::query()
+            ->whereIn('slug', ['super-admin', 'admin', 'guest'])
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    private function isLastSuperAdmin(User $user): bool
+    {
+        $superAdminRoleId = Role::where('slug', 'super-admin')->value('id');
+        if (! $superAdminRoleId || (int) $user->role_id !== (int) $superAdminRoleId) {
+            return false;
+        }
+
+        return User::where('role_id', $superAdminRoleId)->where('id', '!=', $user->id)->doesntExist();
     }
 
     public function index()
@@ -31,9 +53,14 @@ class UserManagementController extends Controller
 
         $isManager = true;
         $users = User::with('role')->latest()->get();
-        // Super Admin is seeded only — not assignable here
-        $roles = Role::whereIn('slug', ['admin', 'guest'])->orderBy('name')->get();
-        $superAdminRole = Role::where('slug', 'super-admin')->first();
+        $roles = Role::whereIn('slug', ['super-admin', 'admin', 'guest'])->get()
+            ->sortBy(fn (Role $role) => match ($role->slug) {
+                'super-admin' => 0,
+                'admin' => 1,
+                default => 2,
+            })
+            ->values();
+        $superAdminRole = $roles->firstWhere('slug', 'super-admin');
 
         return view('content-management.users.index', compact('users', 'roles', 'superAdminRole', 'isManager'));
     }
@@ -42,7 +69,7 @@ class UserManagementController extends Controller
     {
         $this->ensureManageAllUsersOrAbort();
 
-        $allowedRoleIds = Role::whereIn('slug', ['admin', 'guest'])->pluck('id')->all();
+        $allowedRoleIds = $this->assignableRoleIds();
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -86,11 +113,7 @@ class UserManagementController extends Controller
         $this->ensureManageAllUsersOrAbort();
 
         $user = User::findOrFail($id);
-        $allowedRoleIds = Role::whereIn('slug', ['admin', 'guest'])->pluck('id')->all();
-        $superAdminRoleId = Role::where('slug', 'super-admin')->value('id');
-        if ($superAdminRoleId && (int) $user->role_id === (int) $superAdminRoleId) {
-            $allowedRoleIds[] = (int) $superAdminRoleId;
-        }
+        $allowedRoleIds = $this->assignableRoleIds();
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -98,6 +121,17 @@ class UserManagementController extends Controller
             'role_id' => ['required', Rule::in($allowedRoleIds)],
             'password' => 'nullable|string|min:8',
         ]);
+
+        $superAdminRoleId = Role::where('slug', 'super-admin')->value('id');
+        $leavingSuperAdmin = $superAdminRoleId
+            && (int) $user->role_id === (int) $superAdminRoleId
+            && (int) $request->role_id !== (int) $superAdminRoleId;
+        if ($leavingSuperAdmin && $this->isLastSuperAdmin($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This is the only super admin. Assign the Super Admin role to another user before changing this one.',
+            ], 422);
+        }
 
         $user->name = $request->name;
         $user->email = $request->email;
@@ -146,6 +180,18 @@ class UserManagementController extends Controller
         $this->ensureManageAllUsersOrAbort();
 
         $user = User::findOrFail($id);
+        if ((int) $user->id === (int) auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot delete your own account.',
+            ], 422);
+        }
+        if ($this->isLastSuperAdmin($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This is the only super admin and cannot be deleted.',
+            ], 422);
+        }
         $user->delete();
 
         return response()->json(['success' => true, 'message' => 'User deleted successfully']);

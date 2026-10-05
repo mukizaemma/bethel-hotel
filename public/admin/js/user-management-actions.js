@@ -83,8 +83,6 @@
         if (vic) vic.style.display = 'block';
         var chk = document.getElementById('verify_immediately');
         if (chk) chk.checked = true;
-        var superOpt = document.getElementById('role_option_super_admin');
-        if (superOpt) superOpt.setAttribute('hidden', 'hidden');
     };
 
     document.addEventListener('click', function (e) {
@@ -123,14 +121,6 @@
                 })
                 .then(function (data) {
                     window.__userMgmtCurrentUserId = id;
-                    var superOpt = document.getElementById('role_option_super_admin');
-                    if (superOpt) {
-                        if (data.role && data.role.slug === 'super-admin') {
-                            superOpt.removeAttribute('hidden');
-                        } else {
-                            superOpt.setAttribute('hidden', 'hidden');
-                        }
-                    }
                     document.getElementById('user_id').value = data.id;
                     document.getElementById('user_name').value = data.name;
                     document.getElementById('user_email').value = data.email;
@@ -215,10 +205,13 @@
                 },
             })
                 .then(function (r) {
-                    return r.json();
+                    return r.json().then(function (data) {
+                        return { ok: r.ok, data: data };
+                    });
                 })
-                .then(function (data) {
-                    if (data.success) location.reload();
+                .then(function (res) {
+                    if (res.ok && res.data.success) location.reload();
+                    else alert((res.data && res.data.message) || 'Could not delete this user.');
                 });
         }
     });
@@ -283,15 +276,32 @@
                 body: new FormData(e.target),
             })
                 .then(function (r) {
-                    return r.json();
+                    return r.json().then(function (data) {
+                        return { ok: r.ok, data: data };
+                    });
                 })
-                .then(function (data) {
-                    if (data.success) {
+                .then(function (res) {
+                    if (res.ok && res.data.success) {
                         closeModal('userModal');
                         setTimeout(function () {
                             location.reload();
                         }, 300);
+                        return;
                     }
+                    var data = res.data || {};
+                    var message = data.message;
+                    if (!message && data.errors) {
+                        message = Object.keys(data.errors)
+                            .map(function (key) {
+                                var value = data.errors[key];
+                                return Array.isArray(value) ? value.join(' ') : String(value);
+                            })
+                            .join('\n');
+                    }
+                    alert(message || 'Could not save this user.');
+                })
+                .catch(function () {
+                    alert('Could not save this user. Please try again.');
                 });
         }
     });

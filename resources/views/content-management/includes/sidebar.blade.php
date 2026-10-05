@@ -1,7 +1,7 @@
 @php
 $setting = App\Models\Setting::first();
 $currentRoute = request()->route()->getName();
-$isPrimaryUserManager = strtolower((string) auth()->user()->email) === 'admin@iremetech.com';
+$isPrimaryUserManager = auth()->user()->isSuperAdmin();
 
 $isCmsOrLegacyDashboard = in_array($currentRoute, ['dashboard', 'content-management.dashboard'], true);
 $isUpdatesAdmin = in_array($currentRoute, ['getBlogs', 'saveBlog', 'editBlog', 'viewBlog', 'updateBlog', 'deleteBlog', 'publishBlog'], true);

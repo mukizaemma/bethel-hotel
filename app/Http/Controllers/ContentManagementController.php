@@ -265,20 +265,23 @@ class ContentManagementController extends Controller
     public function users()
     {
         $users = User::with('role')->latest()->get();
-        $roles = Role::whereIn('slug', ['admin', 'guest'])->orderBy('name')->get();
-        $superAdminRole = Role::where('slug', 'super-admin')->first();
+        $roles = Role::whereIn('slug', ['super-admin', 'admin', 'guest'])->get()
+            ->sortBy(fn (Role $role) => match ($role->slug) {
+                'super-admin' => 0,
+                'admin' => 1,
+                default => 2,
+            })
+            ->values();
+        $superAdminRole = $roles->firstWhere('slug', 'super-admin');
+        $isManager = auth()->user()?->isSuperAdmin() ?? false;
 
-        return view('content-management.users.index', compact('users', 'roles', 'superAdminRole'));
+        return view('content-management.users.index', compact('users', 'roles', 'superAdminRole', 'isManager'));
     }
 
     public function updateUserRole(Request $request, $id)
     {
         $user = User::findOrFail($id);
-        $allowedRoleIds = Role::whereIn('slug', ['admin', 'guest'])->pluck('id')->all();
-        $superAdminRoleId = Role::where('slug', 'super-admin')->value('id');
-        if ($superAdminRoleId && (int) $user->role_id === (int) $superAdminRoleId) {
-            $allowedRoleIds[] = (int) $superAdminRoleId;
-        }
+        $allowedRoleIds = Role::whereIn('slug', ['super-admin', 'admin', 'guest'])->pluck('id')->all();
 
         $request->validate([
             'role_id' => ['required', Rule::in($allowedRoleIds)],
