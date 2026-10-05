@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\EmailVerificationMail;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserManagementController extends Controller
 {
@@ -26,15 +27,63 @@ class UserManagementController extends Controller
     }
 
     /**
-     * @return list<int>
+     * @return array<string, string>
      */
-    private function assignableRoleIds(): array
+    private function canonicalRoleLabels(): array
     {
-        return Role::query()
-            ->whereIn('slug', ['super-admin', 'admin', 'guest'])
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
+        return [
+            'super-admin' => 'Super Admin',
+            'admin' => 'Admin',
+            'guest' => 'Normal User',
+        ];
+    }
+
+    /**
+     * Keep stored role names aligned with the labels shown in System Users.
+     */
+    private function ensureCanonicalRoleNames(): void
+    {
+        foreach ($this->canonicalRoleLabels() as $slug => $name) {
+            Role::query()->where('slug', $slug)->where('name', '!=', $name)->update(['name' => $name]);
+        }
+    }
+
+    private function roleFromRequest(Request $request): Role
+    {
+        $labels = $this->canonicalRoleLabels();
+        $slug = (string) $request->input('role_slug', '');
+
+        $role = null;
+        if ($slug !== '' && array_key_exists($slug, $labels)) {
+            $role = Role::query()->where('slug', $slug)->first();
+        }
+
+        if (! $role && $request->filled('role_id')) {
+            $role = Role::query()
+                ->whereKey((int) $request->input('role_id'))
+                ->whereIn('slug', array_keys($labels))
+                ->first();
+        }
+
+        if (! $role) {
+            throw ValidationException::withMessages([
+                'role_slug' => 'Choose Super Admin, Admin, or Normal User.',
+            ]);
+        }
+
+        return $role;
+    }
+
+    private function assignRole(User $user, Role $role): void
+    {
+        DB::table('users')->where('id', $user->id)->update([
+            'role_id' => $role->id,
+            'updated_at' => now(),
+        ]);
+
+        $user->role_id = $role->id;
+        $user->unsetRelation('role');
+        $user->setRelation('role', $role);
     }
 
     private function isLastSuperAdmin(User $user): bool
@@ -50,6 +99,7 @@ class UserManagementController extends Controller
     public function index()
     {
         $this->ensureManageAllUsersOrAbort();
+        $this->ensureCanonicalRoleNames();
 
         $isManager = true;
         $users = User::with('role')->latest()->get();
@@ -69,13 +119,12 @@ class UserManagementController extends Controller
     {
         $this->ensureManageAllUsersOrAbort();
 
-        $allowedRoleIds = $this->assignableRoleIds();
+        $role = $this->roleFromRequest($request);
 
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'role_id' => ['required', Rule::in($allowedRoleIds)],
             'verify_immediately' => 'nullable|boolean',
         ]);
 
@@ -83,7 +132,7 @@ class UserManagementController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role_id' => $request->role_id,
+            'role_id' => $role->id,
             'user_id' => \Ramsey\Uuid\Uuid::uuid4(),
         ];
 
@@ -112,20 +161,17 @@ class UserManagementController extends Controller
     {
         $this->ensureManageAllUsersOrAbort();
 
-        $user = User::findOrFail($id);
-        $allowedRoleIds = $this->assignableRoleIds();
+        $user = User::with('role')->findOrFail($id);
+        $role = $this->roleFromRequest($request);
 
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-            'role_id' => ['required', Rule::in($allowedRoleIds)],
             'password' => 'nullable|string|min:8',
         ]);
 
-        $superAdminRoleId = Role::where('slug', 'super-admin')->value('id');
-        $leavingSuperAdmin = $superAdminRoleId
-            && (int) $user->role_id === (int) $superAdminRoleId
-            && (int) $request->role_id !== (int) $superAdminRoleId;
+        $currentSlug = $user->role->slug ?? null;
+        $leavingSuperAdmin = $currentSlug === 'super-admin' && $role->slug !== 'super-admin';
         if ($leavingSuperAdmin && $this->isLastSuperAdmin($user)) {
             return response()->json([
                 'success' => false,
@@ -135,15 +181,30 @@ class UserManagementController extends Controller
 
         $user->name = $request->name;
         $user->email = $request->email;
-        $user->role_id = $request->role_id;
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
         }
 
         $user->save();
+        $this->assignRole($user, $role);
 
-        return response()->json(['success' => true, 'message' => 'User updated successfully']);
+        $savedSlug = User::with('role')->findOrFail($user->id)->role->slug ?? null;
+        if ($savedSlug !== $role->slug) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The role could not be saved. Please try again.',
+            ], 500);
+        }
+
+        $label = $this->canonicalRoleLabels()[$role->slug] ?? $role->name;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User updated. Role is now '.$label.'.',
+            'role_slug' => $role->slug,
+            'role_label' => $label,
+        ]);
     }
 
     public function verifyEmail($id)

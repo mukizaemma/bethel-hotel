@@ -15,6 +15,25 @@
         data-url-reset-password="{{ route('content-management.users.reset-password', ['id' => '__ID__'], false) }}"
     ></div>
 
+    @php
+        $roleLabel = function ($role) {
+            return match ($role->slug ?? null) {
+                'super-admin' => 'Super Admin',
+                'admin' => 'Admin',
+                'guest' => 'Normal User',
+                default => $role->name ?? 'No Role',
+            };
+        };
+        $roleBadge = function ($role) {
+            return match ($role->slug ?? null) {
+                'super-admin' => 'bg-dark',
+                'admin' => 'bg-primary',
+                'guest' => 'bg-secondary',
+                default => 'bg-info',
+            };
+        };
+    @endphp
+
     <div class="container-fluid pt-4 px-4">
         <div class="bg-light rounded h-100 p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -50,7 +69,7 @@
                             <td>{{ $user->email }}</td>
                             <td>
                                 @if($user->role)
-                                    <span class="badge bg-info">{{ $user->role->name }}</span>
+                                    <span class="badge {{ $roleBadge($user->role) }}">{{ $roleLabel($user->role) }}</span>
                                 @else
                                     <span class="badge bg-secondary">No Role Assigned</span>
                                 @endif
@@ -74,7 +93,7 @@
                                         <i class="fa fa-envelope"></i>
                                     </button>
                                     @endif
-                                    <button type="button" class="btn btn-sm btn-warning" data-user-action="edit" data-user-id="{{ $user->id }}" data-user-name="{{ $user->name }}" data-user-email="{{ $user->email }}" data-user-role-id="{{ $user->role_id }}" title="Edit User">
+                                    <button type="button" class="btn btn-sm btn-warning" data-user-action="edit" data-user-id="{{ $user->id }}" data-user-name="{{ $user->name }}" data-user-email="{{ $user->email }}" data-user-role-id="{{ $user->role_id }}" data-user-role-slug="{{ $user->role->slug ?? '' }}" title="Edit User">
                                         <i class="fa fa-edit"></i>
                                     </button>
                                     <button type="button" class="btn btn-sm btn-secondary" data-user-action="reset-password" data-user-id="{{ $user->id }}" title="Reset Password">
@@ -124,20 +143,10 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Assign Role *</label>
-                        <select class="form-control form-select" id="user_role_id" name="role_id" required>
+                        <select class="form-control form-select" id="user_role_id" name="role_slug" required>
                             <option value="">-- Select Role --</option>
                             @foreach($roles as $role)
-                            @php
-                                $roleNote = match ($role->slug) {
-                                    'super-admin' => 'Full access, including Settings and System Users',
-                                    'admin' => 'Same access as Super Admin, except Settings and System Users',
-                                    'guest' => 'No access to the admin dashboard',
-                                    default => $role->description,
-                                };
-                            @endphp
-                            <option value="{{ $role->id }}" data-role-name="{{ $role->name }}">
-                                {{ $role->name }}@if($roleNote) — {{ $roleNote }}@endif
-                            </option>
+                            <option value="{{ $role->slug }}">{{ $roleLabel($role) }}</option>
                             @endforeach
                         </select>
                         <small class="form-text text-muted">Super Admin can open Settings and System Users. Admin can use every other part of the dashboard. Normal User cannot open the admin dashboard.</small>

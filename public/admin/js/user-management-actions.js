@@ -130,7 +130,15 @@
             document.getElementById('user_id').value = id;
             document.getElementById('user_name').value = btn.getAttribute('data-user-name') || '';
             document.getElementById('user_email').value = btn.getAttribute('data-user-email') || '';
-            document.getElementById('user_role_id').value = btn.getAttribute('data-user-role-id') || '';
+            var roleSelect = document.getElementById('user_role_id');
+            var roleSlug = btn.getAttribute('data-user-role-slug') || '';
+            if (roleSelect) {
+                roleSelect.value = roleSlug;
+                if (roleSelect.value !== roleSlug && btn.getAttribute('data-user-role-id')) {
+                    var match = roleSelect.querySelector('option[data-role-id="' + btn.getAttribute('data-user-role-id') + '"]');
+                    if (match) roleSelect.value = match.value;
+                }
+            }
             document.getElementById('user_password').required = false;
             document.getElementById('user_password').value = '';
             document.getElementById('passwordLabel').textContent = '(leave blank to keep current)';
@@ -264,13 +272,19 @@
             var url = currentId
                 ? cfg().dataset.urlUpdate.replace('__ID__', currentId)
                 : cfg().dataset.urlStore;
+            var fd = new FormData(e.target);
+            var roleSelect = e.target.querySelector('[name="role_slug"]');
+            if (roleSelect) {
+                fd.set('role_slug', roleSelect.value);
+            }
             fetch(url, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': getCsrfToken(),
                     Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: new FormData(e.target),
+                body: fd,
             })
                 .then(function (r) {
                     return r.json().then(function (data) {
@@ -279,10 +293,8 @@
                 })
                 .then(function (res) {
                     if (res.ok && res.data.success) {
-                        closeModal('userModal');
-                        setTimeout(function () {
-                            location.reload();
-                        }, 300);
+                        try { closeModal('userModal'); } catch (err) {}
+                        window.location.reload();
                         return;
                     }
                     var data = res.data || {};
